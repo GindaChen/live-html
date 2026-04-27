@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>your deck · live-html template</title>
+<link rel="stylesheet" href="../../editor.css">
+<style>
+  :root{
+    /* color tokens */
+    --bg:#0e0f12; --fg:#d7dadf; --dim:#8a8f99; --line:#262932;
+    --accent:#7aa2ff; --accent2:#9ed27a; --warn:#e8b86b; --code:#1a1c22;
+    /* type ramp */
+    --t-mega:42px; --t-h1:26px; --t-h2:16px; --t-h3:13px;
+    --t-body:13.5px; --t-small:12px; --t-caption:11px;
+    --ff-mono:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--fg);
+    font-family:var(--ff-mono);font-size:14.5px;line-height:1.5}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  .deck{position:relative;height:100vh;width:100vw;overflow:hidden}
+  .slide{position:absolute;inset:0;padding:36px 56px 52px;display:none;
+    overflow:auto;flex-direction:column}
+  .slide.active{display:flex}
+  .slide h1{font-size:var(--t-h1);margin:0 0 4px;font-weight:600;letter-spacing:-0.01em}
+  .slide h2{font-size:var(--t-h2);margin:0 0 16px;font-weight:500;color:var(--dim)}
+  .slide h3{font-size:var(--t-h3);margin:14px 0 6px;color:var(--accent);font-weight:600}
+  .slide p,.slide li{font-size:var(--t-body)}
+  .slide ul{margin:4px 0 10px;padding-left:18px}
+  .slide li{margin:3px 0}
+  .slide code{background:var(--code);padding:1px 5px;border-radius:3px;
+    font-size:var(--t-small);color:var(--accent2)}
+  .rule{border:0;border-top:1px solid var(--line);margin:6px 0 14px}
+
+  .hud{position:fixed;left:0;right:0;bottom:0;height:30px;
+    border-top:1px solid var(--line);background:var(--bg);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 14px;font-size:11px;color:var(--dim);z-index:10}
+  .hud .title{color:var(--fg)}
+  .hud .nav button{background:transparent;color:var(--dim);
+    border:1px solid var(--line);border-radius:3px;
+    padding:1px 8px;font-family:inherit;font-size:10px;cursor:pointer}
+  .hud .nav button:hover{color:var(--fg);border-color:var(--accent)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .card{border:1px solid var(--line);border-radius:5px;padding:12px 14px;background:#13151a}
+  .card h3{margin-top:0}
+  .stat{display:flex;flex-direction:column;border-left:2px solid var(--accent);
+    padding:2px 0 2px 12px;margin:6px 0}
+  .stat .num{font-size:20px;color:var(--fg);font-weight:600}
+  .stat .lbl{color:var(--dim);font-size:var(--t-caption)}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:99px;
+    padding:0 8px;font-size:10.5px;color:var(--dim);margin-right:4px;line-height:18px}
+  .spark{border:1px solid #4d3a18;background:#1f1610;border-radius:5px;
+    padding:8px 12px;margin:8px 0;font-size:var(--t-small);color:#f1d5a4}
+  .spark::before{content:"✦ note";display:block;font-size:10px;color:var(--warn);
+    margin-bottom:3px}
+
+  .title-slide{justify-content:center}
+  .title-slide .big{font-size:var(--t-mega);font-weight:700;letter-spacing:-0.02em;line-height:1.1}
+  .title-slide .sub{font-size:var(--t-h2);color:var(--dim);margin-top:12px;max-width:780px}
+  .title-slide .meta{margin-top:28px;color:var(--dim);font-size:var(--t-small)}
+</style>
+</head>
+<body>
+
+<script type="application/json" id="live-html-config">
+{
+  "storageKey": "live-html-template::oplog::v1",
+  "rootSelector": "#deck",
+  "saveMode": "auto"
+}
+</script>
+
+<div class="deck" id="deck">
+
+  <!-- 1 title -->
+  <section class="slide title-slide">
+    <div class="big">your deck title</div>
+    <div class="big" style="color:var(--accent)">a one-line subtitle</div>
+    <div class="sub">A live-html template — toggle <b>edit on</b> in the toolbar above and
+      replace this text with your own. Save when you're happy. The file rewrites itself.</div>
+    <div class="meta">your name · date · v0.1</div>
+  </section>
+
+  <!-- 2 problem / motivation -->
+  <section class="slide">
+    <h1>1 · the problem you're solving</h1>
+    <h2>frame the pain in one sentence</h2>
+    <hr class="rule">
+    <div class="grid2">
+      <div>
+        <h3>what's hard today</h3>
+        <ul>
+          <li>concrete pain point #1</li>
+          <li>concrete pain point #2</li>
+          <li>concrete pain point #3</li>
+        </ul>
+        <h3>why it matters now</h3>
+        <p>One paragraph. Be specific.</p>
+      </div>
+      <div class="card">
+        <h3>headline number</h3>
+        <div class="stat"><span class="num">42×</span><span class="lbl">improvement vs baseline</span></div>
+        <div class="stat"><span class="num">3 day</span><span class="lbl">to integrate</span></div>
+        <div class="spark">The one thing the audience should remember from this slide.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <h1>2 · the approach</h1>
+    <h2>how you address it</h2>
+    <hr class="rule">
+    <p>Replace this with your central idea. Use bullets, code blocks, tables, or images
+       — the building blocks below already exist:</p>
+    <ul>
+      <li><code>.card</code>, <code>.stat</code>, <code>.spark</code> for emphasis</li>
+      <li><code>.pill</code> for tags: <span class="pill">tag</span> <span class="pill">another</span></li>
+      <li><code>.grid2</code> for two-column layout</li>
+    </ul>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <h1>3 · what's next</h1>
+    <h2>action items / takeaways</h2>
+    <hr class="rule">
+    <ul>
+      <li>concrete next step #1</li>
+      <li>concrete next step #2</li>
+      <li>concrete next step #3</li>
+    </ul>
+  </section>
+
+  <!-- 5 design-system meta-slide (live & editable) -->
+  <section class="slide ds-slide">
+    <h1>appendix · design system</h1>
+    <h2>this slide is live — edits propagate to every other slide</h2>
+    <hr class="rule">
+    <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:22px">
+      <div>
+        <h3>colors</h3>
+        <div id="ds-colors"></div>
+      </div>
+      <div>
+        <h3>type ramp</h3>
+        <div id="ds-type"></div>
+      </div>
+    </div>
+    <h3>raw overrides</h3>
+    <pre class="ds-raw" id="ds-raw"><span class="empty">no overrides · matches base design system</span></pre>
+  </section>
+
+</div>
+
+<!-- live-html toolbar -->
+<div class="ebar" id="ebar">
+  <span class="lbl">edit</span>
+  <button id="eb-toggle" title="toggle edit mode">off</button>
+  <span class="sep"></span>
+  <button id="eb-undo" title="undo (⌘Z)">↶</button>
+  <button id="eb-redo" title="redo (⌘⇧Z)">↷</button>
+  <button id="eb-history" title="show edit log">log</button>
+  <span class="sep"></span>
+  <button id="eb-save" title="save back to file (or download)">save</button>
+  <button id="eb-download" title="download current state">download</button>
+  <button id="eb-revert" title="discard local edits">revert</button>
+  <span class="sep"></span>
+  <span class="count" id="eb-count">clean</span>
+  <span class="dot" id="eb-status"></span>
+</div>
+<div class="hp" id="eb-hist-panel">
+  <div class="hp-head">
+    <span><b>edit log</b></span>
+    <span><a id="eb-hp-close" title="close">×</a></span>
+  </div>
+  <div class="hp-list"></div>
+  <div class="hp-foot">
+    <span>save = clear log + write disk</span>
+  </div>
+</div>
+
+<div class="hud">
+  <div class="title">your deck · live-html template</div>
+  <div class="nav">
+    <button id="prev">← prev</button>
+    <button id="next">next →</button>
+  </div>
+  <div><span id="cur">1</span> / <span id="tot">1</span></div>
+</div>
+
+<script>
+  // tiny slide nav
+  const slides=[...document.querySelectorAll('.slide')];
+  const cur=document.getElementById('cur'),tot=document.getElementById('tot');
+  tot.textContent=slides.length;
+  let i=0;
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    cur.textContent=i+1;location.hash=i+1;
+  }
+  document.getElementById('next').onclick=()=>show(i+1);
+  document.getElementById('prev').onclick=()=>show(i-1);
+  document.addEventListener('keydown',e=>{
+    if(document.activeElement&&document.activeElement.isContentEditable) return;
+    if(e.key==='ArrowRight'||e.key===' ')show(i+1);
+    else if(e.key==='ArrowLeft')show(i-1);
+    else if(e.key==='Home')show(0);
+    else if(e.key==='End')show(slides.length-1);
+  });
+  show(Math.max(0,parseInt(location.hash.slice(1))-1)||0);
+</script>
+<script src="../../editor.js"></script>
+</body>
+</html>

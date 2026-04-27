@@ -1,0 +1,1794 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DeepSeek-V4 — slide walkthrough</title>
+<style>
+  :root{
+    /* color tokens */
+    --bg:#0e0f12;
+    --fg:#d7dadf;
+    --dim:#8a8f99;
+    --line:#262932;
+    --accent:#7aa2ff;
+    --accent2:#9ed27a;
+    --warn:#e8b86b;
+    --pink:#e58fb0;
+    --code:#1a1c22;
+    /* type ramp */
+    --t-mega:42px;
+    --t-h1:26px;
+    --t-h2:16px;
+    --t-h3:13px;
+    --t-body:13.5px;
+    --t-small:12px;
+    --t-caption:11px;
+    /* font family */
+    --ff-mono:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--fg);
+    font-family:var(--ff-mono);
+    font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  .deck{position:relative;height:100vh;width:100vw;overflow:hidden}
+  .slide{position:absolute;inset:0;padding:36px 56px 52px;display:none;
+    overflow:auto;flex-direction:column}
+  .slide.active{display:flex}
+  .slide h1{font-size:var(--t-h1);margin:0 0 4px;font-weight:600;letter-spacing:-0.01em}
+  .slide h2{font-size:var(--t-h2);margin:0 0 16px;font-weight:500;color:var(--dim)}
+  .slide h3{font-size:var(--t-h3);margin:14px 0 6px;color:var(--accent);font-weight:600;
+    text-transform:none;letter-spacing:0.02em}
+  .slide p,.slide li{font-size:var(--t-body)}
+  .slide ul{margin:4px 0 10px 0;padding-left:18px}
+  .slide li{margin:3px 0}
+  .slide code,.kbd{background:var(--code);padding:1px 5px;border-radius:3px;
+    font-size:var(--t-small);color:var(--accent2)}
+  .rule{border:0;border-top:1px solid var(--line);margin:6px 0 14px}
+
+  /* hud */
+  .hud{position:fixed;left:0;right:0;bottom:0;height:30px;
+    border-top:1px solid var(--line);background:var(--bg);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 14px;font-size:11px;color:var(--dim);z-index:10}
+  .hud .title{color:var(--fg)}
+  .hud .nav button{background:transparent;color:var(--dim);border:1px solid var(--line);
+    border-radius:3px;padding:1px 8px;font-family:inherit;font-size:10px;cursor:pointer}
+  .hud .nav button:hover{color:var(--fg);border-color:var(--accent)}
+  .hud .ctr{font-variant-numeric:tabular-nums}
+
+  /* layout helpers */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
+  .card{border:1px solid var(--line);border-radius:5px;padding:12px 14px;background:#13151a}
+  .card h3{margin-top:0}
+
+  .stat{display:flex;flex-direction:column;border-left:2px solid var(--accent);
+    padding:2px 0 2px 12px;margin:6px 0}
+  .stat .num{font-size:20px;color:var(--fg);font-weight:600}
+  .stat .lbl{color:var(--dim);font-size:11.5px}
+
+  table{border-collapse:collapse;width:100%;font-size:12.5px;margin:6px 0}
+  th,td{text-align:left;border-bottom:1px solid var(--line);padding:5px 8px}
+  th{color:var(--dim);font-weight:500}
+  td.num{font-variant-numeric:tabular-nums;text-align:right}
+  td.win{color:var(--accent2)}
+
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:99px;
+    padding:0 8px;font-size:10.5px;color:var(--dim);margin-right:4px;line-height:18px}
+  .pill.ok{color:var(--accent2);border-color:#2c4a2a}
+  .pill.warn{color:var(--warn);border-color:#5a4220}
+  .pill.acc{color:var(--accent);border-color:#28406a}
+  .pill.cite{color:var(--accent);border-color:#28406a;font-size:10px}
+  .pill.cite a{color:var(--accent)}
+
+  /* "why exciting" callout */
+  .spark{border:1px solid #4d3a18;background:#1f1610;border-radius:5px;
+    padding:8px 12px;margin:8px 0;font-size:12.5px;color:#f1d5a4}
+  .spark::before{content:"✦ why exciting";display:block;font-size:10px;color:var(--warn);
+    text-transform:none;letter-spacing:0.06em;margin-bottom:3px}
+
+  /* references */
+  .refs{margin-top:auto;padding-top:10px;border-top:1px dashed var(--line);
+    font-size:11px;color:var(--dim);line-height:1.6}
+  .refs b{color:var(--fg);font-weight:500}
+  .refs a{color:var(--accent)}
+  .refs span.ref{margin-right:14px;white-space:nowrap}
+
+  pre{background:var(--code);padding:10px 12px;border-radius:4px;overflow:auto;
+    font-size:11.5px;color:#cfd5e3;border:1px solid var(--line)}
+
+  .ascii{font-size:11px;line-height:1.3;white-space:pre;color:var(--dim)}
+  .ascii .hi{color:var(--accent)}
+  .ascii .ok{color:var(--accent2)}
+  .ascii .wn{color:var(--warn)}
+
+  /* figure */
+  .fig{border:1px solid var(--line);border-radius:5px;padding:8px;background:#fafafa;
+    display:flex;flex-direction:column;align-items:center}
+  .fig img{max-width:100%;max-height:48vh;object-fit:contain;display:block}
+  .fig.dark{background:#13151a}
+  .fig.dark img{filter:invert(0.93) hue-rotate(180deg)}
+  .figcap{font-size:11px;color:var(--dim);margin-top:4px;text-align:center}
+
+  .title-slide{justify-content:center;align-items:flex-start}
+  .title-slide .big{font-size:var(--t-mega);font-weight:700;letter-spacing:-0.02em;line-height:1.1}
+  .title-slide .sub{font-size:var(--t-h2);color:var(--dim);margin-top:12px;max-width:780px}
+  .title-slide .meta{margin-top:28px;color:var(--dim);font-size:var(--t-small)}
+
+  .eq{font-family:"Latin Modern Math","Cambria Math",serif;background:var(--code);
+    padding:8px 12px;border-radius:4px;display:inline-block;font-style:italic;
+    color:#dfe4ee;border:1px solid var(--line)}
+
+  /* lineage table styling */
+  .lineage td:first-child{color:var(--dim);font-size:11.5px;width:90px}
+  .lineage td:nth-child(2){color:var(--fg);font-weight:500}
+  .lineage td:nth-child(3){color:var(--dim);font-size:12px}
+  .lineage td:last-child{font-size:11px}
+
+  /* edit mode */
+  body.editing [contenteditable="true"]{outline:1px dashed transparent;
+    transition:outline-color .15s,background-color .15s;border-radius:2px}
+  body.editing [contenteditable="true"]:hover{outline-color:#3a3f4a;
+    background:rgba(122,162,255,0.04)}
+  body.editing [contenteditable="true"]:focus{outline:1px solid var(--accent);
+    background:rgba(122,162,255,0.08);outline-offset:1px}
+  [contenteditable="true"]{caret-color:var(--accent)}
+
+  /* toolbar */
+  .ebar{position:fixed;top:10px;right:12px;z-index:20;display:flex;gap:6px;
+    background:#13151a;border:1px solid var(--line);border-radius:5px;
+    padding:5px 7px;font-size:11px;align-items:center;color:var(--dim);
+    box-shadow:0 4px 14px rgba(0,0,0,0.35)}
+  .ebar button{background:transparent;color:var(--fg);border:1px solid var(--line);
+    border-radius:3px;padding:2px 9px;font-family:inherit;font-size:11px;cursor:pointer}
+  .ebar button:hover{border-color:var(--accent);color:var(--accent)}
+  .ebar button.on{background:var(--accent);color:#0e0f12;border-color:var(--accent)}
+  .ebar .dot{width:7px;height:7px;border-radius:99px;background:var(--line);display:inline-block}
+  .ebar .dot.dirty{background:var(--warn)}
+  .ebar .dot.saved{background:var(--accent2)}
+  .ebar .lbl{color:var(--dim);font-size:10.5px;margin-right:4px}
+  .ebar .sep{width:1px;height:14px;background:var(--line);margin:0 2px}
+  .ebar button:disabled{opacity:0.35;cursor:not-allowed}
+  .ebar .count{font-size:10.5px;color:var(--dim);font-variant-numeric:tabular-nums;
+    min-width:54px;text-align:right}
+  .ebar .count.dirty{color:var(--warn)}
+  @media print{.ebar,.hud,.hp{display:none}}
+
+  /* history panel */
+  .hp{position:fixed;top:50px;right:12px;width:420px;max-height:72vh;z-index:19;
+    background:#13151a;border:1px solid var(--line);border-radius:6px;
+    box-shadow:0 12px 28px rgba(0,0,0,0.5);
+    display:none;flex-direction:column;overflow:hidden}
+  .hp.open{display:flex}
+  .hp-head{padding:8px 12px;border-bottom:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:11.5px;color:var(--dim)}
+  .hp-head b{color:var(--fg);font-weight:500}
+  .hp-list{overflow:auto;padding:4px 0}
+  .hp-row{display:grid;grid-template-columns:62px 110px 1fr;gap:8px;
+    padding:6px 12px;font-size:11px;border-left:2px solid transparent;cursor:pointer;
+    align-items:baseline}
+  .hp-row:hover{background:rgba(122,162,255,0.06)}
+  .hp-row.applied{border-left-color:var(--accent2)}
+  .hp-row.unredone{border-left-color:var(--line);opacity:0.55}
+  .hp-ts{color:var(--dim);font-variant-numeric:tabular-nums}
+  .hp-where{color:var(--accent)}
+  .hp-diff{color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hp-empty{padding:14px;font-size:11.5px;color:var(--dim);text-align:center}
+  .hp-foot{padding:6px 10px;border-top:1px solid var(--line);font-size:10.5px;
+    color:var(--dim);display:flex;justify-content:space-between}
+  .hp-foot a{color:var(--accent);cursor:pointer}
+  .hp-row.theme{font-style:italic}
+  .hp-row.theme .hp-where{color:var(--warn)}
+
+  /* ── design-system slide ── */
+  .ds-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:22px;margin-top:8px}
+  .ds-section{margin-bottom:14px}
+  .ds-section > h3{margin-top:0}
+  .ds-tokens{display:flex;flex-direction:column;gap:5px}
+  .ds-row{display:grid;grid-template-columns:90px 1fr 86px 64px;gap:10px;
+    align-items:center;font-size:var(--t-small);padding:3px 0;
+    border-bottom:1px dotted var(--line)}
+  .ds-row:last-child{border-bottom:none}
+  .ds-name{color:var(--dim);font-variant-numeric:tabular-nums}
+  .ds-swatch{width:100%;height:18px;border-radius:3px;border:1px solid var(--line);
+    cursor:pointer}
+  .ds-hex{background:var(--code);border:1px solid var(--line);color:var(--fg);
+    padding:2px 6px;border-radius:3px;font-family:inherit;font-size:var(--t-caption);
+    width:100%}
+  .ds-hex:focus{outline:1px solid var(--accent);border-color:var(--accent)}
+  .ds-reset{background:transparent;border:1px solid var(--line);color:var(--dim);
+    border-radius:3px;font-family:inherit;font-size:10px;cursor:pointer;padding:2px 4px}
+  .ds-reset:hover{color:var(--warn);border-color:var(--warn)}
+  .ds-type-row{display:grid;grid-template-columns:60px 1fr 64px 64px;gap:10px;
+    align-items:center;padding:4px 0;border-bottom:1px dotted var(--line)}
+  .ds-type-row:last-child{border-bottom:none}
+  .ds-type-sample{color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ds-num{background:var(--code);border:1px solid var(--line);color:var(--fg);
+    padding:2px 6px;border-radius:3px;font-family:inherit;font-size:var(--t-caption);
+    width:100%;text-align:right;font-variant-numeric:tabular-nums}
+  .ds-num:focus{outline:1px solid var(--accent);border-color:var(--accent)}
+  .ds-components{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;
+    padding:8px 0}
+  .ds-component{border:1px dashed var(--line);border-radius:4px;padding:10px 12px;
+    background:rgba(255,255,255,0.01)}
+  .ds-component-label{color:var(--dim);font-size:var(--t-caption);
+    margin-bottom:6px;letter-spacing:0.04em}
+  .ds-raw{background:var(--code);border:1px solid var(--line);border-radius:4px;
+    padding:8px 12px;font-size:var(--t-caption);color:var(--accent2);
+    overflow:auto;max-height:140px;white-space:pre;font-family:var(--ff-mono)}
+  .ds-raw .empty{color:var(--dim);font-style:italic}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- 1 title -->
+<section class="slide title-slide">
+  <div class="big">DeepSeek-V4</div>
+  <div class="big" style="color:var(--accent)">towards million-token context, efficiently</div>
+  <div class="sub">A ground-up walkthrough: motivation → architecture → hybrid attention →
+    residual upgrade → optimizer → infrastructure → training → results, with prior-art
+    context for every component.</div>
+  <div class="meta">paper: DeepSeek-V4 preview, DeepSeek-AI · 58 pages · arXiv preview, Apr 24 2026</div>
+  <div class="meta">checkpoints: huggingface.co/collections/deepseek-ai/deepseek-v4</div>
+</section>
+
+<!-- 2 problem -->
+<section class="slide">
+  <h1>1 · the problem</h1>
+  <h2>two pressures meet a quadratic wall</h2>
+  <hr class="rule">
+  <div class="grid2">
+    <div>
+      <h3>test-time scaling pushed token budgets up</h3>
+      <ul>
+        <li>process supervision &amp; long CoT: <i>Let's Verify Step by Step</i> (Lightman 2023)</li>
+        <li>OpenAI o1 / o3 — paid compute scales answer quality</li>
+        <li>DeepSeek-R1 (Jan 2025): pure-RL reasoning, &gt;32K tokens per answer is normal</li>
+        <li>agentic loops: tool calls, repos, deep research → 100K–1M effective context</li>
+      </ul>
+      <h3>vanilla attention is the bottleneck</h3>
+      <ul>
+        <li><b>O(n²)</b> compute, <b>O(n)</b> KV memory per layer</li>
+        <li>at 1M tokens, KV cache and bandwidth dominate over weights</li>
+        <li>cheap 1M-token <i>inference</i> — not just training — is the gating constraint</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>what V4 promises</h3>
+      <div class="stat"><span class="num">1,000,000</span><span class="lbl">tokens of native context</span></div>
+      <div class="stat"><span class="num">27%</span><span class="lbl">of V3.2 single-token FLOPs (V4-Pro)</span></div>
+      <div class="stat"><span class="num">10%</span><span class="lbl">of V3.2 KV cache size (V4-Pro)</span></div>
+      <div class="stat"><span class="num">~2 %</span><span class="lbl">of BF16-GQA8 baseline KV at 1M</span></div>
+      <div class="spark">
+        V3.2 already had sparse attention (DSA). V4 wins more headroom by attacking a
+        <i>different</i> axis — compressing groups of <code>m</code> tokens into single KV entries
+        <i>before</i> selection. Savings stack <i>multiplicatively</i> with DSA's.
+      </div>
+    </div>
+  </div>
+  <div class="refs">
+    <span class="ref"><b>Lightman+ 2023</b> <a href="https://arxiv.org/abs/2305.20050">2305.20050</a></span>
+    <span class="ref"><b>DeepSeek-R1</b> <a href="https://arxiv.org/abs/2501.12948">2501.12948</a></span>
+    <span class="ref"><b>Vaswani+ 2017</b> 1706.03762</span>
+  </div>
+</section>
+
+<!-- 3 family -->
+<section class="slide">
+  <h1>2 · the family — and the headline figure</h1>
+  <h2>two MoE models, one recipe</h2>
+  <hr class="rule">
+  <div class="grid2">
+    <div>
+      <table>
+        <thead><tr><th></th><th>V4-Flash</th><th>V4-Pro</th><th>(V3.2 ref)</th></tr></thead>
+        <tbody>
+          <tr><td>total params</td><td>284B</td><td>1.6T</td><td>671B</td></tr>
+          <tr><td>activated / token</td><td>13B</td><td>49B</td><td>37B</td></tr>
+          <tr><td>transformer layers</td><td>43</td><td>61</td><td>—</td></tr>
+          <tr><td>hidden d</td><td>4096</td><td>7168</td><td>—</td></tr>
+          <tr><td>routed experts</td><td>256 (top-6)</td><td>384 (top-6)</td><td>—</td></tr>
+          <tr><td>pre-train tokens</td><td>32T</td><td>33T</td><td>—</td></tr>
+          <tr><td>context</td><td>1M</td><td>1M</td><td>128K</td></tr>
+        </tbody>
+      </table>
+      <p style="color:var(--dim);font-size:12px">
+        <span class="pill acc">Flash</span> efficient reasoning at smaller budget
+        <span class="pill acc">Pro</span> flagship; "Pro-Max" = max reasoning effort
+      </p>
+      <p style="font-size:12.5px">First two layers use pure sliding-window attention. The first three
+      MoE layers use Hash routing instead of learned routing.</p>
+    </div>
+    <div class="fig">
+      <img src="figs/fig01b-scaling.png" alt="V4 vs V3.2 FLOPs and KV cache scaling">
+      <div class="figcap">paper Fig 1 (right) — single-token FLOPs and accumulated KV cache
+        vs sequence length. V4-Pro 3.7×/9.5× lower than V3.2; V4-Flash 9.8×/13.7× lower.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 architecture overview -->
+<section class="slide">
+  <h1>3 · architecture, big picture</h1>
+  <h2>V3 lineage with three deliberate upgrades</h2>
+  <hr class="rule">
+  <div class="grid2">
+    <div>
+      <h3>kept from V3</h3>
+      <ul>
+        <li><b>DeepSeekMoE</b>: shared + fine-grained routed experts (Dai+ 2024)</li>
+        <li><b>Multi-Token Prediction</b> (MTP) auxiliary loss</li>
+        <li>auxiliary-loss-free load balancing + slight seq-wise loss</li>
+      </ul>
+      <h3>new in V4</h3>
+      <ul>
+        <li>① <b>Hybrid attention</b>: CSA + HCA interleaved (replaces V3.2's DSA-on-MLA)</li>
+        <li>② <b>mHC</b>: manifold-constrained hyper-connections (residual upgrade)</li>
+        <li>③ <b>Muon</b> optimizer (with AdamW for embeddings, head, RMSNorm, mHC statics)</li>
+      </ul>
+      <h3>small but notable</h3>
+      <ul>
+        <li>routing affinity: Sigmoid → Sqrt(Softplus)</li>
+        <li>removed cap on routing target nodes</li>
+        <li>first 3 MoE layers use Hash routing</li>
+      </ul>
+    </div>
+    <div class="fig dark">
+      <img src="figs/fig02.png" alt="DeepSeek-V4 overall architecture">
+      <div class="figcap">paper Fig 2 — transformer block: pre/post mixing through CSA or HCA
+        and DeepSeekMoE; mHC residual stream; LM head + MTP modules.</div>
+    </div>
+  </div>
+  <div class="refs">
+    <span class="ref"><b>DeepSeekMoE</b> <a href="https://arxiv.org/abs/2401.06066">2401.06066</a></span>
+    <span class="ref"><b>DeepSeek-V2 (MLA)</b> <a href="https://arxiv.org/abs/2405.04434">2405.04434</a></span>
+    <span class="ref"><b>DeepSeek-V3</b> 2412.19437</span>
+    <span class="ref"><b>MTP / Gloeckle 2024</b> 2404.19737</span>
+  </div>
+</section>
+
+<!-- 5 background attention -->
+<section class="slide">
+  <h1>4 · background — attention &amp; KV cache</h1>
+  <h2>the concepts every later slide builds on</h2>
+  <hr class="rule">
+  <div class="grid2">
+    <div>
+      <h3>standard self-attention</h3>
+      <p>for each query token <code>t</code>, scores against all preceding keys:</p>
+      <div class="eq">softmax( Q<sub>t</sub> Kᵀ / √d ) · V</div>
+      <ul>
+        <li>compute: <b>n × n</b> — quadratic in sequence length</li>
+        <li>decode: cache K, V per layer → <b>KV cache</b> grows with n</li>
+        <li>at long n, KV memory &amp; bandwidth dominate, not weights</li>
+      </ul>
+    </div>
+    <div>
+      <h3>known knobs to attack the cost</h3>
+      <ul>
+        <li><b>MQA / GQA / MLA</b>: shrink KV across heads or via low-rank latent</li>
+        <li><b>sliding window</b>: each token sees only last <code>w</code> tokens</li>
+        <li><b>sparse selection</b>: pick top-k relevant keys per query (DSA)</li>
+        <li><b>compression / pooling</b>: pool blocks of <code>m</code> tokens → 1 entry</li>
+        <li><b>linear / SSM</b>: rewrite as kernel or recurrent state — constant memory but lossy recall</li>
+      </ul>
+      <p style="color:var(--dim);font-size:12px">V4 = compression + sparse selection + sliding window
+      + attention sink, in two complementary regimes.</p>
+    </div>
+  </div>
+  <div class="refs">
+    <span class="ref"><b>MQA Shazeer 2019</b> <a href="https://arxiv.org/abs/1911.02150">1911.02150</a></span>
+    <span class="ref"><b>GQA Ainslie+ 2023</b> <a href="https://arxiv.org/abs/2305.13245">2305.13245</a></span>
+    <span class="ref"><b>MLA / DeepSeek-V2</b> <a href="https://arxiv.org/abs/2405.04434">2405.04434</a></span>
+    <span class="ref"><b>RoPE Su+ 2021</b> 2104.09864</span>
+  </div>
+</section>
+
+<!-- 5b NEW: lineage map -->
+<section class="slide">
+  <h1>4b · prior work map for long-context attention</h1>
+  <h2>what people tried before V4</h2>
+  <hr class="rule">
+  <table class="lineage">
+    <thead><tr><th>year</th><th>method</th><th>idea in one line</th><th>arxiv</th></tr></thead>
+    <tbody>
+      <tr><td>2019</td><td>Sparse Transformers (Child+)</td><td>fixed strided/factorized patterns, O(n√n)</td><td><a href="https://arxiv.org/abs/1904.10509">1904.10509</a></td></tr>
+      <tr><td>2020</td><td>Reformer</td><td>LSH bucketed attention, O(n log n)</td><td><a href="https://arxiv.org/abs/2001.04451">2001.04451</a></td></tr>
+      <tr><td>2020</td><td>Longformer / BigBird</td><td>sliding window + global tokens, linear cost</td><td><a href="https://arxiv.org/abs/2004.05150">2004.05150</a> · <a href="https://arxiv.org/abs/2007.14062">2007.14062</a></td></tr>
+      <tr><td>2020</td><td>Linformer / Performer / Linear T.</td><td>low-rank or kernel approximation of softmax</td><td><a href="https://arxiv.org/abs/2006.04768">2006.04768</a> · <a href="https://arxiv.org/abs/2009.14794">2009.14794</a> · <a href="https://arxiv.org/abs/2006.16236">2006.16236</a></td></tr>
+      <tr><td>2023</td><td>RWKV / Mamba / Mamba-2</td><td>recurrent / selective SSMs, constant state</td><td><a href="https://arxiv.org/abs/2305.13048">2305.13048</a> · <a href="https://arxiv.org/abs/2312.00752">2312.00752</a> · <a href="https://arxiv.org/abs/2405.21060">2405.21060</a></td></tr>
+      <tr><td>2024</td><td>Attention Sink / StreamingLLM</td><td>keep first tokens to absorb attention mass</td><td><a href="https://arxiv.org/abs/2309.17453">2309.17453</a></td></tr>
+      <tr><td>2024</td><td>MLA (DeepSeek-V2)</td><td>low-rank latent KV with decoupled RoPE</td><td><a href="https://arxiv.org/abs/2405.04434">2405.04434</a></td></tr>
+      <tr><td>2025</td><td>NSA — Native Sparse Attention</td><td>compress + select + window, end-to-end trainable</td><td><a href="https://arxiv.org/abs/2502.11089">2502.11089</a></td></tr>
+      <tr><td>2025</td><td>MiniMax-01 (Lightning Attn)</td><td>linear attention at 456B-MoE, 4M extrapolate</td><td><a href="https://arxiv.org/abs/2501.08313">2501.08313</a></td></tr>
+      <tr><td>2025</td><td>DSA (DeepSeek-V3.2)</td><td>lightning indexer + top-k on top of MLA</td><td><a href="https://arxiv.org/abs/2512.02556">2512.02556</a></td></tr>
+      <tr><td><b>2026</b></td><td><b>CSA + HCA (V4)</b></td><td><b>two interleaved compression regimes + indexer in FP4</b></td><td>(this paper)</td></tr>
+    </tbody>
+  </table>
+  <div class="spark">
+    Pattern in the field: either <i>linear-time but lossy</i> (SSM, lightning) or <i>exact but expensive</i>
+    (sparse-windowed full). V4's contribution is to <b>stack two compression regimes at different
+    block sizes</b> rather than picking one — CSA preserves detail, HCA absorbs global context.
+  </div>
+</section>
+
+<!-- 6 hybrid attention idea -->
+<section class="slide">
+  <h1>5 · the headline idea — hybrid attention</h1>
+  <h2>two compression regimes, interleaved across layers</h2>
+  <hr class="rule">
+  <div class="grid2">
+    <div class="card">
+      <h3>CSA — Compressed Sparse Attention</h3>
+      <ul>
+        <li>compress every <b>m</b> KV tokens → 1 entry &nbsp;<span class="pill">m=4</span></li>
+        <li>then a <b>lightning indexer</b> picks top-k compressed entries</li>
+        <li>+ small sliding window for local detail</li>
+        <li>preserves fidelity; sparsity is the speedup</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>HCA — Heavily Compressed Attention</h3>
+      <ul>
+        <li>compress every <b>m'</b> tokens → 1 entry &nbsp;<span class="pill">m'=128</span></li>
+        <li><b>dense</b> attention over compressed sequence (no top-k)</li>
+        <li>+ small sliding window</li>
+        <li>extreme cache reduction; relies on heavy summarization</li>
+      </ul>
+    </div>
+  </div>
+  <h3>what is genuinely new vs prior sparse attention</h3>
+  <ul>
+    <li><b>two interleaved compression regimes</b>: NSA had one compression branch alongside select+window; CSA stacks <i>two</i> compressors at different block sizes</li>
+    <li><b>lightning indexer in FP4</b>: V3.2 introduced the indexer; V4 pushes it to FP4 — index scores are smooth ranking signals, FP4's coarse grid is harmless</li>
+    <li><b>overlapping windows</b> on the second compressed stream (Cᵇ) — prior work uses disjoint blocks</li>
+    <li><b>RoPE applied at position −i on outputs</b> recovers relative position after compression — not seen in prior literature</li>
+    <li><b>attention sink inside compressed-block attention</b> (StreamingLLM applied it to raw tokens only)</li>
+  </ul>
+  <div class="refs">
+    <span class="ref"><b>NSA DeepSeek 2025</b> <a href="https://arxiv.org/abs/2502.11089">2502.11089</a></span>
+    <span class="ref"><b>DSA / V3.2</b> <a href="https://arxiv.org/abs/2512.02556">2512.02556</a></span>
+    <span class="ref"><b>Streaming/Sink Xiao+ 2024</b> <a href="https://arxiv.org/abs/2309.17453">2309.17453</a></span>
+  </div>
+</section>
+
+<!-- 7 CSA detail -->
+<section class="slide">
+  <h1>5a · CSA in detail</h1>
+  <h2>compress, then sparsely select</h2>
+  <hr class="rule">
+  <div class="grid2">
+    <div>
+      <h3>step 1 — token-level compressor</h3>
+      <ul>
+        <li>two KV streams Cᵃ, Cᵇ + softmax weights Zᵃ, Zᵇ</li>
+        <li>each compressed entry pools <b>2m</b> raw entries (overlapping windows on Cᵇ)</li>
+        <li>net: sequence length reduced to <b>n/m</b></li>
+      </ul>
+      <h3>step 2 — lightning indexer</h3>
+      <ul>
+        <li>cheap MQA-style scorer in <b>FP4</b></li>
+        <li>index score I<sub>t,s</sub> via low-rank query ↔ compressed key</li>
+        <li>retain top-k (Flash: 512, Pro: 1024)</li>
+      </ul>
+      <h3>step 3 — core attention</h3>
+      <ul>
+        <li>shared-KV MQA over selected blocks + sliding window</li>
+        <li><b>grouped output projection</b> keeps the projection matrix tractable</li>
+      </ul>
+    </div>
+    <div class="fig dark">
+      <img src="figs/fig03.png" alt="CSA architecture">
+      <div class="figcap">paper Fig 3 — token-level compressor → lightning indexer → top-k selection
+        → shared-KV MQA, with a sliding-window branch alongside.</div>
+    </div>
+  </div>
+  <div class="refs">
+    <span class="ref"><b>NSA Yuan+ 2025</b> <a href="https://arxiv.org/abs/2502.11089">2502.11089</a></span>
+    <span class="ref"><b>DSA / V3.2 2025</b> <a href="https://arxiv.org/abs/2512.02556">2512.02556</a></span>
+    <span class="ref"><b>MXFP4 OCP spec 2023</b> opencompute.org</span>
+  </div>
+</section>
+
+<!-- 8 HCA detail + extras -->
+<section class="slide">
+  <h1>5b · HCA + the small-but-important bits</h1>
+  <h2>and where the 2% KV figure comes from</h2>
+  <hr class="rule">
+  <div class="grid2">
+    <div>
+      <h3>HCA flow</h3>
+      <ul>
+        <li>single compressor, no two-stream overlap</li>
+        <li>m' = 128 → 128× cache shrink on the compressed branch</li>
+        <li><b>dense</b> MQA over compressed entries + sliding window</li>
+        <li>same shared-KV + grouped output projection as CSA</li>
+      </ul>
+      <h3>shared tricks for both</h3>
+      <ul>
+        <li>RMSNorm on Q &amp; KV → no exploding logits, no QK-Clip needed</li>
+        <li><b>partial RoPE</b> on last 64 dims; trick of adding RoPE at <code>−i</code> on outputs to recover relative position after compression</li>
+        <li>extra <b>sliding-window branch</b> for local fidelity</li>
+        <li><b>attention sink</b> logit added to denominator — heads can attend to ~0</li>
+      </ul>
+      <div class="refs" style="margin-top:8px">
+        <span class="ref"><b>QK-Clip / Liu+ 2025</b> 2502.16982</span>
+        <span class="ref"><b>RoPE 2104.09864</b></span>
+      </div>
+    </div>
+    <div class="fig dark">
+      <img src="figs/fig04.png" alt="HCA architecture">
+      <div class="figcap">paper Fig 4 — HCA: single heavy compressor, dense MQA, sliding-window branch.</div>
+      <div class="spark" style="margin-top:8px">
+        Combined storage tricks (FP8 KV with BF16 RoPE dims; FP4 indexer attention) plus
+        smaller top-k bring V4 to <b>~2% of BF16-GQA8 baseline KV</b> at 1M context.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 mHC -->
+<section class="slide">
+  <h1>6 · residual upgrade — mHC</h1>
+  <h2>manifold-constrained hyper-connections</h2>
+  <hr class="rule">
+  <div class="grid2">
+    <div>
+      <h3>recap: hyper-connections (Zhu+ ICLR 2025)</h3>
+      <ul>
+        <li>generalize residual stream R<sup>d</sup> → R<sup>n<sub>hc</sub>×d</sup></li>
+        <li>three small linear maps per layer: A (input), B (residual), C (output)</li>
+        <li>update: <code>X<sub>l+1</sub> = B·X<sub>l</sub> + C·𝓕<sub>l</sub>(A·X<sub>l</sub>)</code></li>
+        <li>breaks the gradient-vanishing / collapse seesaw; subsumes DenseNet</li>
+        <li>matches baseline LM loss with ~½ the tokens — but unconstrained B drifts past ‖·‖<sub>2</sub>=1, breaking trillion-param stacks</li>
+      </ul>
+      <h3>mHC fix (Xie+ 2026)</h3>
+      <ul>
+        <li>constrain B to <b>doubly stochastic</b> matrices (Birkhoff polytope)</li>
+        <li>‖B‖<sub>2</sub> ≤ 1 → residual map is non-expansive</li>
+        <li>set is closed under multiplication → arbitrarily deep stacks stay stable</li>
+        <li>A, C bounded non-negative via sigmoid → no signal cancellation</li>
+      </ul>
+    </div>
+    <div>
+      <h3>how they enforce it</h3>
+      <ul>
+        <li>A = σ(Ã), &nbsp; C = 2σ(C̃)</li>
+        <li>project B̃ via <b>Sinkhorn-Knopp</b> (1964/67) — same algo as entropic OT (Cuturi 2013)
+          <ul>
+            <li>M<sup>(0)</sup> = exp(B̃)</li>
+            <li>iterate row + col normalize (t<sub>max</sub>=20)</li>
+          </ul>
+        </li>
+      </ul>
+      <div class="spark">
+        First (to our knowledge) deployment of doubly-stochastic projection inside the <b>forward
+        pass of a trillion-param LLM</b> as a structural stability guarantee — not just as a
+        regularizer on attention or MoE routing.
+      </div>
+      <h3>siblings in Lipschitz-control land</h3>
+      <ul style="font-size:12px">
+        <li>spectral norm reg (Miyato+ 2018)</li>
+        <li>weight orthogonalization</li>
+        <li>ReZero (Bachlechner+ 2020)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="refs">
+    <span class="ref"><b>HC Zhu+ 2024</b> <a href="https://arxiv.org/abs/2409.19606">2409.19606</a></span>
+    <span class="ref"><b>mHC Xie+ 2026</b> <a href="https://arxiv.org/abs/2512.24880">2512.24880</a></span>
+    <span class="ref"><b>Sinkhorn / OT Cuturi 2013</b> <a href="https://arxiv.org/abs/1306.0895">1306.0895</a></span>
+    <span class="ref"><b>SpectralNorm Miyato+ 2018</b> <a href="https://arxiv.org/abs/1802.05957">1802.05957</a></span>
+    <span class="ref"><b>ReZero 2020</b> <a href="https://arxiv.org/abs/2003.04887">2003.04887</a></span>
+  </div>
+</section>
+
+<!-- 10 Muon -->
+<section class="slide">
+  <h1>7 · optimizer — Muon</h1>
+  <h2>orthogonalized updates for hidden weights, at trillion scale</h2>
+  <hr class="rule">
+  <div class="grid2">
+    <div>
+      <h3>recipe</h3>
+      <pre class="ascii">
+G<sub>t</sub>  = ∇L(W<sub>t-1</sub>)
+M<sub>t</sub>  = μ M<sub>t-1</sub> + G<sub>t</sub>
+O'<sub>t</sub> = HybridNewtonSchulz(μM<sub>t</sub>+G<sub>t</sub>)   # ≈ U V<sup>T</sup> from SVD
+O<sub>t</sub>  = O'<sub>t</sub> · √max(n,m) · γ
+W<sub>t</sub>  = W<sub>t-1</sub>(1 − ηλ) − η O<sub>t</sub>
+      </pre>
+      <h3>hybrid Newton-Schulz</h3>
+      <ul>
+        <li>10 iterations, 2 stages:
+          <ul>
+            <li><b>fast</b> (×8): (3.4445, −4.7750, 2.0315) — push σ toward 1 from anywhere</li>
+            <li><b>stabilize</b> (×2): (2, −1.5, 0.5) — lock σ ≈ 1</li>
+          </ul>
+        </li>
+        <li>approximates Q from SVD without computing one</li>
+      </ul>
+    </div>
+    <div>
+      <h3>why this is exciting</h3>
+      <ul>
+        <li>orthogonalization = steepest descent in <b>spectral norm</b> (vs Adam's element-wise rescaling) — sharper geometry for matrix-valued params</li>
+        <li>theoretical lineage: Shampoo, Bernstein &amp; Newhouse <i>Modular Duality</i> (2024) — Muon is the lightweight, preconditioner-free realization</li>
+        <li><b>first credible AdamW challenger to win at frontier scale</b>:
+          <ul>
+            <li>Liu+ 2025 (Moonlight, 16B-active) — ~2× token efficiency vs AdamW</li>
+            <li>V4 (1.6T total) — largest known Muon deployment to date</li>
+            <li>RMSNorm on Q/KV removed need for QK-Clip stabilization</li>
+          </ul>
+        </li>
+      </ul>
+      <h3>training-stability extras</h3>
+      <ul style="font-size:12px">
+        <li><b>anticipatory routing</b> — route with previous-step params; auto-engages around loss spikes</li>
+        <li><b>SwiGLU clamping</b> — linear branch ∈ [−10, 10], gate ≤ 10</li>
+      </ul>
+    </div>
+  </div>
+  <div class="refs">
+    <span class="ref"><b>Muon Jordan 2024</b> kellerjordan.github.io/posts/muon</span>
+    <span class="ref"><b>Liu+ 2025 Moonlight</b> <a href="https://arxiv.org/abs/2502.16982">2502.16982</a></span>
+    <span class="ref"><b>Modular Duality 2024</b> <a href="https://arxiv.org/abs/2410.21265">2410.21265</a></span>
+    <span class="ref"><b>Shampoo 2018</b> <a href="https://arxiv.org/abs/1802.09568">1802.09568</a></span>
+    <span class="ref"><b>AdamW 2017</b> <a href="https://arxiv.org/abs/1711.05101">1711.05101</a></span>
+  </div>
+</section>
+
+<!-- 11 infra overview -->
+<section class="slide">
+  <h1>8 · infrastructure</h1>
+  <h2>what makes 1.6T × 1M tractable</h2>
+  <hr class="rule">
+  <div class="grid2" style="grid-template-columns:1.2fr 1fr">
+    <div class="grid3" style="gap:14px">
+      <div class="card">
+        <h3>MoE expert parallelism</h3>
+        <ul style="font-size:12px">
+          <li>fuse dispatch + linear-1/2 + combine into <b>one pipelined kernel</b></li>
+          <li>split experts into <b>waves</b>; comm of next wave hides under compute of current</li>
+          <li>theoretical <b>1.92×</b> speedup vs naive — vs Comet's 1.42×</li>
+          <li>lineage: GShard, Switch, TUTEL, FasterMoE, COMET, DeepEP</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>kernels &amp; precision</h3>
+        <ul style="font-size:12px">
+          <li><b>TileLang</b> — tiled DSL, 1.36–1.70× over Triton/FlashAttn-3</li>
+          <li><b>batch-invariant deterministic</b> kernel libs → bitwise reproducible train↔infer</li>
+          <li><b>FP4 (MXFP4)</b> QAT for MoE expert weights and indexer QK path</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>training framework</h3>
+        <ul style="font-size:12px">
+          <li>tensor-level activation checkpointing (extended autograd)</li>
+          <li>hybrid <b>ZeRO</b> tailored to Muon</li>
+          <li>fused / recompute path for cheap mHC</li>
+          <li>two-stage <b>contextual parallelism</b> for compressed attention at 1M</li>
+        </ul>
+      </div>
+    </div>
+    <div class="fig dark">
+      <img src="figs/fig05.png" alt="EP overlap waves">
+      <div class="figcap">paper Fig 5 — naive vs Comet vs V4's wave-based EP scheme.
+        Splitting experts into waves so all-to-all of next wave hides under linear-1/2 of current.</div>
+    </div>
+  </div>
+  <h3>why each is exciting</h3>
+  <ul>
+    <li><b>EP overlap</b>: 1.92× suggests freeing SMs from comm duty entirely (hook-based, not just better tiles)</li>
+    <li><b>FP4 surgically</b>: index scores are smooth ranking signals → FP4's coarse grid is harmless where it would wreck attention logits</li>
+    <li><b>batch-invariant kernels</b>: enables on-policy RL <i>without</i> importance-sampling correction, exact bisection of loss spikes, reproducible evals</li>
+    <li><b>3FS</b>: open-sourced 7.3 TB/s aggregate-read filesystem underpins teacher-weight streaming and DSec sandboxes</li>
+  </ul>
+  <div class="refs">
+    <span class="ref"><b>GShard 2020</b> <a href="https://arxiv.org/abs/2006.16668">2006.16668</a></span>
+    <span class="ref"><b>Switch 2021</b> <a href="https://arxiv.org/abs/2101.03961">2101.03961</a></span>
+    <span class="ref"><b>TUTEL 2022</b> <a href="https://arxiv.org/abs/2206.03382">2206.03382</a></span>
+    <span class="ref"><b>COMET 2025</b> <a href="https://arxiv.org/abs/2502.19811">2502.19811</a></span>
+    <span class="ref"><b>TileLang 2025</b> <a href="https://arxiv.org/abs/2504.17577">2504.17577</a></span>
+    <span class="ref"><b>FP8-LM 2023</b> <a href="https://arxiv.org/abs/2310.18313">2310.18313</a></span>
+    <span class="ref"><b>Triton 2021</b> <a href="https://arxiv.org/abs/2107.13042">2107.13042</a></span>
+    <span class="ref"><b>Defeating Nondet. — Thinking Machines Sept 2025</b></span>
+    <span class="ref"><b>3FS — github.com/deepseek-ai/3FS</b></span>
+  </div>
+</section>
+
+<!-- 12 pretraining -->
+<section class="slide">
+  <h1>9 · pre-training</h1>
+  <h2>data, schedule, stability</h2>
+  <hr class="rule">
+  <div class="grid2">
+    <div>
+      <h3>data (32–33 T tokens)</h3>
+      <ul>
+        <li>builds on V3 corpus; long-document curation emphasized</li>
+        <li>filters batched auto-generated / templated web content (Zhu+ 2024)</li>
+        <li>more multilingual (long-tail cultures), more scientific/tech</li>
+        <li>agentic data injected at <b>mid-training</b> for code</li>
+        <li>vocab 128K; FIM + token-splitting from V3; sample-level attention masking</li>
+      </ul>
+    </div>
+    <div>
+      <h3>schedule</h3>
+      <ul>
+        <li>batch warmup → 75.5M (Flash) / 94.4M (Pro) tokens</li>
+        <li>seq length: 4K → 16K → 64K → <b>1M</b></li>
+        <li>attention sparsity introduced only at 64K, after dense warmup</li>
+        <li>indexer warm-up before turning on top-k selection</li>
+        <li>cosine decay near the end; MTP loss 0.3 → 0.1 at LR decay</li>
+      </ul>
+    </div>
+  </div>
+  <h3>stability lessons</h3>
+  <ul>
+    <li>spikes correlate with MoE-layer outliers; routing reinforces them</li>
+    <li><b>anticipatory routing</b> + <b>SwiGLU clamping</b> kill spikes with negligible overhead</li>
+    <li>mHC + RMSNorm-on-QK + Muon together remove the need for QK-Clip used in Liu+ 2025</li>
+  </ul>
+</section>
+
+<!-- 13 base results -->
+<section class="slide">
+  <h1>10 · base-model results</h1>
+  <h2>V4-Flash-Base ≥ V3.2-Base on most benchmarks at 13B activated</h2>
+  <hr class="rule">
+  <table>
+    <thead><tr><th>benchmark</th><th class="num">V3.2-Base (37B)</th>
+      <th class="num">V4-Flash-Base (13B)</th><th class="num">V4-Pro-Base (49B)</th></tr></thead>
+    <tbody>
+      <tr><td>MMLU (5-shot)</td><td class="num">87.8</td><td class="num">88.7</td><td class="num win">90.1</td></tr>
+      <tr><td>MMLU-Pro</td><td class="num">65.5</td><td class="num">68.3</td><td class="num win">73.5</td></tr>
+      <tr><td>SimpleQA-verified</td><td class="num">28.3</td><td class="num">30.1</td><td class="num win">55.2</td></tr>
+      <tr><td>SuperGPQA</td><td class="num">45.0</td><td class="num">46.5</td><td class="num win">53.9</td></tr>
+      <tr><td>FACTS-Parametric</td><td class="num">27.1</td><td class="num">33.9</td><td class="num win">62.6</td></tr>
+      <tr><td>HumanEval</td><td class="num">62.8</td><td class="num">69.5</td><td class="num win">76.8</td></tr>
+      <tr><td>GSM8K</td><td class="num">91.1</td><td class="num">90.8</td><td class="num win">92.6</td></tr>
+      <tr><td>MATH</td><td class="num">60.5</td><td class="num">57.4</td><td class="num win">64.5</td></tr>
+      <tr><td>LongBench-V2</td><td class="num">40.2</td><td class="num">44.7</td><td class="num win">51.5</td></tr>
+    </tbody>
+  </table>
+  <p style="color:var(--dim);font-size:12.5px">Flash matches or beats V3.2 with ~1/3 the activated params; Pro raises every category, especially knowledge &amp; long context.</p>
+</section>
+
+<!-- 14 post-training -->
+<section class="slide">
+  <h1>11 · post-training pipeline</h1>
+  <h2>specialists, then merge by on-policy distillation</h2>
+  <hr class="rule">
+  <div class="grid2">
+    <div>
+      <h3>stage 1 — specialist training</h3>
+      <ul>
+        <li>per domain (math, code, agent, instruction-follow): SFT → RL with <b>GRPO</b> (Shao+ 2024)</li>
+        <li>three reasoning effort modes trained with different length penalties:
+          <span class="pill">non-think</span>
+          <span class="pill acc">think-high</span>
+          <span class="pill warn">think-max</span></li>
+        <li><b>Generative Reward Model</b> (GRM): actor itself plays judge for hard-to-verify tasks — direct application of GenRM (Zhang+ 2024)</li>
+      </ul>
+      <h3>stage 2 — On-Policy Distillation (OPD)</h3>
+      <ul>
+        <li>cited: Lu &amp; Thinking Machines Lab, Oct 2025</li>
+        <li><b>replaces</b> V3.2's mixed-RL stage entirely</li>
+        <li>student samples its own trajectories; teachers (10+) provide per-token KL feedback</li>
+        <li>uses <b>full-vocabulary</b> reverse-KL (not token-level estimate) → lower variance</li>
+        <li>algorithmic ancestor: MiniLLM (Gu+ 2023, on-policy reverse-KL distillation)</li>
+      </ul>
+    </div>
+    <div>
+      <h3>infra for OPD at scale</h3>
+      <ul>
+        <li>teacher weights live in centralized 3FS, ZeRO-sharded, loaded on demand</li>
+        <li>cache last-layer teacher hidden states; rebuild full logits via the prediction head on the fly (avoids materializing 100k-vocab × N-teachers logits)</li>
+        <li>order samples by teacher index → only one teacher head in GPU mem at a time</li>
+        <li>specialized TileLang KL kernel</li>
+      </ul>
+      <div class="spark">
+        Why it beats mixed-RL: in V3.2, math/code/chat rewards competed in one optimization
+        ("reward conflict"). V4 trains specialists separately on clean rewards, then merges via
+        <i>behavioral</i> distillation — conceptually closer to <b>Branch-Train-Merge</b> /
+        <b>Model Soups</b>, but using token distributions, not weight averaging.
+      </div>
+      <h3>RL infra</h3>
+      <ul style="font-size:12px">
+        <li>FP4 rollouts; preemptible &amp; fault-tolerant rollout service with token-granular WAL</li>
+        <li><b>DSec</b> sandbox: container / microVM / fullVM, hundreds of thousands per cluster on 3FS</li>
+      </ul>
+    </div>
+  </div>
+  <div class="refs">
+    <span class="ref"><b>GRPO Shao+ 2024</b> <a href="https://arxiv.org/abs/2402.03300">2402.03300</a></span>
+    <span class="ref"><b>PPO Schulman+ 2017</b> <a href="https://arxiv.org/abs/1707.06347">1707.06347</a></span>
+    <span class="ref"><b>MiniLLM Gu+ 2023</b> <a href="https://arxiv.org/abs/2306.08543">2306.08543</a></span>
+    <span class="ref"><b>GenRM Zhang+ 2024</b> <a href="https://arxiv.org/abs/2408.15240">2408.15240</a></span>
+    <span class="ref"><b>LLM-as-Judge 2023</b> <a href="https://arxiv.org/abs/2306.05685">2306.05685</a></span>
+    <span class="ref"><b>Self-Rewarding 2024</b> <a href="https://arxiv.org/abs/2401.10020">2401.10020</a></span>
+    <span class="ref"><b>Model Soups 2022</b> <a href="https://arxiv.org/abs/2203.05482">2203.05482</a></span>
+    <span class="ref"><b>BTM Li+ 2022</b> <a href="https://arxiv.org/abs/2208.03306">2208.03306</a></span>
+  </div>
+</section>
+
+<!-- 15 reasoning modes / agent -->
+<section class="slide">
+  <h1>12 · reasoning modes &amp; agent integration</h1>
+  <hr class="rule">
+  <div class="grid2">
+    <div>
+      <h3>three modes, one model</h3>
+      <table>
+        <thead><tr><th>mode</th><th>use</th><th>format</th></tr></thead>
+        <tbody>
+          <tr><td>non-think</td><td>routine, low-risk</td><td><code>&lt;/think&gt; summary</code></td></tr>
+          <tr><td>think-high</td><td>complex, planning</td><td><code>&lt;think&gt;…&lt;/think&gt; summary</code></td></tr>
+          <tr><td>think-max</td><td>frontier reasoning</td><td>+ injected "be thorough" prompt</td></tr>
+        </tbody>
+      </table>
+      <p style="color:var(--dim);font-size:12px">API-surface convergence with OpenAI's <code>reasoning_effort</code>
+      and Anthropic's <code>budget_tokens</code> for extended thinking.</p>
+      <h3>tool-call schema</h3>
+      <ul>
+        <li>new <code>&lt;|DSML|&gt;</code> XML format → fewer escape errors than JSON tool calls</li>
+        <li><b>interleaved thinking</b>: reasoning preserved across tool turns within an agentic task; flushed on new user message in chat</li>
+      </ul>
+    </div>
+    <div>
+      <div class="fig dark">
+        <img src="figs/fig07.png" alt="Thinking management">
+        <div class="figcap">paper Fig 7 — left: tool-calling preserves all prior thinking;
+          right: chat-only flushes thinking on new user message.</div>
+      </div>
+      <h3>quick instruction</h3>
+      <p>Special tokens that <b>reuse the existing KV cache</b> for auxiliary tasks — no separate small model, no re-prefill:</p>
+      <p style="font-size:11.5px">
+        <code>&lt;|action|&gt;</code> need search? ·
+        <code>&lt;|query|&gt;</code> gen query ·
+        <code>&lt;|authority|&gt;</code> need authoritative source? ·
+        <code>&lt;|domain|&gt;</code> classify ·
+        <code>&lt;|extracted_url|&gt;</code> / <code>&lt;|read_url|&gt;</code> ·
+        <code>&lt;|title|&gt;</code> conv title
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- 16 final results -->
+<section class="slide">
+  <h1>13 · headline post-trained results</h1>
+  <h2>V4-Pro-Max vs frontier closed/open models</h2>
+  <hr class="rule">
+  <table>
+    <thead><tr><th>benchmark</th>
+      <th class="num">Opus 4.6 Max</th><th class="num">GPT-5.4 xHi</th>
+      <th class="num">Gemini 3.1-Pro Hi</th><th class="num">K2.6</th>
+      <th class="num">GLM-5.1</th><th class="num">DS-V4-Pro Max</th></tr></thead>
+    <tbody>
+      <tr><td>MMLU-Pro</td><td class="num">89.1</td><td class="num">87.5</td><td class="num win">91.0</td><td class="num">87.1</td><td class="num">86.0</td><td class="num">87.5</td></tr>
+      <tr><td>SimpleQA-verified</td><td class="num">46.2</td><td class="num">45.3</td><td class="num win">75.6</td><td class="num">36.9</td><td class="num">38.1</td><td class="num">57.9</td></tr>
+      <tr><td>GPQA Diamond</td><td class="num">91.3</td><td class="num">93.0</td><td class="num win">94.3</td><td class="num">90.5</td><td class="num">86.2</td><td class="num">90.1</td></tr>
+      <tr><td>HLE</td><td class="num">40.0</td><td class="num">39.8</td><td class="num win">44.4</td><td class="num">36.4</td><td class="num">34.7</td><td class="num">37.7</td></tr>
+      <tr><td>LiveCodeBench</td><td class="num">88.8</td><td class="num">—</td><td class="num">91.7</td><td class="num">89.6</td><td class="num">—</td><td class="num win">93.5</td></tr>
+      <tr><td>Codeforces (rating)</td><td class="num">—</td><td class="num">3168</td><td class="num">3052</td><td class="num">—</td><td class="num">—</td><td class="num win">3206</td></tr>
+      <tr><td>Apex Shortlist</td><td class="num">85.9</td><td class="num">78.1</td><td class="num">89.1</td><td class="num">75.5</td><td class="num">72.4</td><td class="num win">90.2</td></tr>
+      <tr><td>SWE-Verified</td><td class="num win">80.8</td><td class="num">—</td><td class="num">80.6</td><td class="num">80.2</td><td class="num">—</td><td class="num">80.6</td></tr>
+      <tr><td>Terminal Bench 2.0</td><td class="num">65.4</td><td class="num win">75.1</td><td class="num">68.5</td><td class="num">66.7</td><td class="num">63.5</td><td class="num">67.9</td></tr>
+      <tr><td>BrowseComp</td><td class="num">83.7</td><td class="num">82.7</td><td class="num win">85.9</td><td class="num">83.2</td><td class="num">79.3</td><td class="num">83.4</td></tr>
+      <tr><td>MRCR 1M</td><td class="num win">92.9</td><td class="num">—</td><td class="num">76.3</td><td class="num">—</td><td class="num">—</td><td class="num">83.5</td></tr>
+    </tbody>
+  </table>
+  <p style="color:var(--dim);font-size:12px">SOTA among open models on knowledge.
+  Lead on code/math (Codeforces 3206 ≈ rank-23 worldwide, LiveCodeBench, Apex).
+  Trails Gemini-3.1-Pro on broad knowledge by ~3–6 months of progress.</p>
+</section>
+
+<!-- 17 long context -->
+<section class="slide">
+  <h1>14 · long-context behavior</h1>
+  <h2>1M tokens isn't just declared, it works</h2>
+  <hr class="rule">
+  <div class="grid2">
+    <div class="fig dark">
+      <img src="figs/fig09.png" alt="MRCR 8-needle results">
+      <div class="figcap">paper Fig 9 — MRCR 8-needle; stable through 128K, gradual decay past 256K.</div>
+    </div>
+    <div>
+      <h3>where it actually pays off</h3>
+      <ul>
+        <li><b>Codeforces 3206</b> (≈ rank 23 worldwide) — first open model on parity with frontier closed</li>
+        <li><b>Putnam-2025</b> with hybrid formal+informal: <b>120/120 perfect</b> under their pipeline</li>
+        <li>think-max gives a real, monotonic lift on hard reasoning</li>
+        <li>token efficiency on HLE better than V3.2 — same accuracy, fewer thinking tokens</li>
+      </ul>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="fig dark">
+      <img src="figs/fig08.png" alt="Putnam formal reasoning">
+      <div class="figcap">paper Fig 8 — formal reasoning. Left: Putnam-200 practical
+        regime; right: Putnam-2025 frontier regime, V4 reaches 120/120.</div>
+    </div>
+    <div class="fig dark">
+      <img src="figs/fig10.png" alt="HLE and TerminalBench cost-perf">
+      <div class="figcap">paper Fig 10 — accuracy vs cost on HLE / Terminal-Bench;
+        V4-Pro-Max sits on the Pareto frontier among open models.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 18 takeaways -->
+<section class="slide">
+  <h1>15 · takeaways</h1>
+  <hr class="rule">
+  <div class="grid2">
+    <div>
+      <h3>what V4 actually contributes</h3>
+      <ul>
+        <li><b>hybrid CSA / HCA</b> — credible recipe for million-token attention at training-and-inference cost that fits open hardware. Two compression regimes interleaved is a genuinely new composition.</li>
+        <li><b>mHC</b> — first deployment of doubly-stochastic-projected residuals at trillion scale; turns hyper-connections from research promise into production-stable.</li>
+        <li><b>Muon at 1.6T</b> — the largest known win for the first credible AdamW challenger; with hybrid Newton-Schulz orthogonalization.</li>
+        <li><b>OPD over mixed RL</b> — pipeline-level innovation: train specialists separately, merge by behavioral distillation. Plus full-vocab logit distillation at scale.</li>
+        <li><b>infra firsts</b>: 1.92× EP overlap, FP4 indexer, batch-invariant deterministic train/infer parity.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>where it sits</h3>
+      <ul>
+        <li>open SOTA on knowledge, code, math; ~3–6 months behind GPT-5.4 / Gemini-3.1-Pro on hardest reasoning</li>
+        <li>1M context is real but quality drops past 256K — Opus still leads on retrieval at 1M</li>
+        <li>FP4×FP8 has the same peak FLOPs as FP8×FP8 today; future hardware could give another <b>1/3</b> headroom</li>
+      </ul>
+      <h3>read next</h3>
+      <ul>
+        <li>open inference reference: <code>huggingface.co/deepseek-ai/DeepSeek-V4-Pro</code></li>
+        <li>V3.2 paper for DSA baseline (arXiv:2512.02556)</li>
+        <li>NSA (arXiv:2502.11089) — direct technical predecessor</li>
+        <li>HC (arXiv:2409.19606), mHC (arXiv:2512.24880)</li>
+        <li>Muon writeup (Jordan 2024); Liu+ 2025 (arXiv:2502.16982)</li>
+        <li>OPD blog — Thinking Machines Lab, Oct 2025</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 19 NEW: full reference appendix -->
+<section class="slide">
+  <h1>appendix · full reference list</h1>
+  <h2>everything cited in this deck, grouped</h2>
+  <hr class="rule">
+  <div class="grid2">
+    <div>
+      <h3>attention &amp; long context</h3>
+      <ul style="font-size:11.5px">
+        <li>Vaswani+ 2017 — Transformer · 1706.03762</li>
+        <li>Child+ 2019 — Sparse Transformers · <a href="https://arxiv.org/abs/1904.10509">1904.10509</a></li>
+        <li>Kitaev+ 2020 — Reformer · <a href="https://arxiv.org/abs/2001.04451">2001.04451</a></li>
+        <li>Beltagy+ 2020 — Longformer · <a href="https://arxiv.org/abs/2004.05150">2004.05150</a></li>
+        <li>Zaheer+ 2020 — BigBird · <a href="https://arxiv.org/abs/2007.14062">2007.14062</a></li>
+        <li>Wang+ 2020 — Linformer · <a href="https://arxiv.org/abs/2006.04768">2006.04768</a></li>
+        <li>Choromanski+ 2020 — Performer · <a href="https://arxiv.org/abs/2009.14794">2009.14794</a></li>
+        <li>Katharopoulos+ 2020 — Linear Transformers · <a href="https://arxiv.org/abs/2006.16236">2006.16236</a></li>
+        <li>Shazeer 2019 — MQA · <a href="https://arxiv.org/abs/1911.02150">1911.02150</a></li>
+        <li>Ainslie+ 2023 — GQA · <a href="https://arxiv.org/abs/2305.13245">2305.13245</a></li>
+        <li>Su+ 2021 — RoPE · 2104.09864</li>
+        <li>Xiao+ 2024 — Attention Sinks · <a href="https://arxiv.org/abs/2309.17453">2309.17453</a></li>
+        <li>Peng+ 2023 — RWKV · <a href="https://arxiv.org/abs/2305.13048">2305.13048</a></li>
+        <li>Gu &amp; Dao 2023 — Mamba · <a href="https://arxiv.org/abs/2312.00752">2312.00752</a></li>
+        <li>Dao &amp; Gu 2024 — Mamba-2 · <a href="https://arxiv.org/abs/2405.21060">2405.21060</a></li>
+        <li>Jiang+ 2023 — Mistral 7B · 2310.06825</li>
+        <li>Gemma 2 — Google 2024 · <a href="https://arxiv.org/abs/2408.00118">2408.00118</a></li>
+        <li>Gemini 1.5 — Google 2024 · <a href="https://arxiv.org/abs/2403.05530">2403.05530</a></li>
+        <li>MiniMax-01 — 2025 · <a href="https://arxiv.org/abs/2501.08313">2501.08313</a></li>
+        <li>Qwen2.5-1M — 2025 · <a href="https://arxiv.org/abs/2501.15383">2501.15383</a></li>
+        <li>Kimi K2 — 2025 · <a href="https://arxiv.org/abs/2507.20534">2507.20534</a></li>
+        <li>RWKV-7 Goose — 2025 · <a href="https://arxiv.org/abs/2503.14456">2503.14456</a></li>
+      </ul>
+      <h3>DeepSeek series</h3>
+      <ul style="font-size:11.5px">
+        <li>DeepSeekMoE 2024 · <a href="https://arxiv.org/abs/2401.06066">2401.06066</a></li>
+        <li>DeepSeek-V2 (MLA) · <a href="https://arxiv.org/abs/2405.04434">2405.04434</a></li>
+        <li>DeepSeek-V3 · 2412.19437</li>
+        <li>DeepSeek-R1 · <a href="https://arxiv.org/abs/2501.12948">2501.12948</a></li>
+        <li>NSA 2025 · <a href="https://arxiv.org/abs/2502.11089">2502.11089</a></li>
+        <li>DeepSeek-V3.2 (DSA) · <a href="https://arxiv.org/abs/2512.02556">2512.02556</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>residuals &amp; stability</h3>
+      <ul style="font-size:11.5px">
+        <li>He+ 2015 — ResNet · 1512.03385</li>
+        <li>Huang+ 2016 — DenseNet · 1608.06993</li>
+        <li>Birkhoff 1946 — Birkhoff polytope theorem</li>
+        <li>Sinkhorn 1964 / Sinkhorn-Knopp 1967</li>
+        <li>Cuturi 2013 — Sinkhorn distances · <a href="https://arxiv.org/abs/1306.0895">1306.0895</a></li>
+        <li>Miyato+ 2018 — Spectral Norm · <a href="https://arxiv.org/abs/1802.05957">1802.05957</a></li>
+        <li>Bachlechner+ 2020 — ReZero · <a href="https://arxiv.org/abs/2003.04887">2003.04887</a></li>
+        <li>Zhu+ 2024 — Hyper-Connections · <a href="https://arxiv.org/abs/2409.19606">2409.19606</a></li>
+        <li>Xie+ 2026 — mHC · <a href="https://arxiv.org/abs/2512.24880">2512.24880</a></li>
+      </ul>
+      <h3>optimizer</h3>
+      <ul style="font-size:11.5px">
+        <li>Schulz 1933 — Newton-Schulz iteration</li>
+        <li>Loshchilov &amp; Hutter 2017 — AdamW · <a href="https://arxiv.org/abs/1711.05101">1711.05101</a></li>
+        <li>Gupta+ 2018 — Shampoo · <a href="https://arxiv.org/abs/1802.09568">1802.09568</a></li>
+        <li>Jordan 2024 — Muon writeup · kellerjordan.github.io</li>
+        <li>Bernstein &amp; Newhouse 2024 — Modular Duality · <a href="https://arxiv.org/abs/2410.21265">2410.21265</a></li>
+        <li>Liu+ 2025 — Moonlight (Muon scalable) · <a href="https://arxiv.org/abs/2502.16982">2502.16982</a></li>
+      </ul>
+      <h3>infrastructure</h3>
+      <ul style="font-size:11.5px">
+        <li>Lepikhin+ 2020 — GShard · <a href="https://arxiv.org/abs/2006.16668">2006.16668</a></li>
+        <li>Fedus+ 2021 — Switch · <a href="https://arxiv.org/abs/2101.03961">2101.03961</a></li>
+        <li>Tillet+ 2021 — Triton · <a href="https://arxiv.org/abs/2107.13042">2107.13042</a></li>
+        <li>Hwang+ 2022 — TUTEL · <a href="https://arxiv.org/abs/2206.03382">2206.03382</a></li>
+        <li>Peng+ 2023 — FP8-LM · <a href="https://arxiv.org/abs/2310.18313">2310.18313</a></li>
+        <li>Zhang+ 2025 — COMET · <a href="https://arxiv.org/abs/2502.19811">2502.19811</a></li>
+        <li>Wang+ 2025 — TileLang · <a href="https://arxiv.org/abs/2504.17577">2504.17577</a></li>
+        <li>OCP MX Formats v1.0 — 2023 · opencompute.org</li>
+        <li>Thinking Machines 2025 — Defeating Nondeterminism in LLM Inference</li>
+        <li>3FS — github.com/deepseek-ai/3FS</li>
+      </ul>
+      <h3>post-training &amp; RL</h3>
+      <ul style="font-size:11.5px">
+        <li>Hinton+ 2015 — KD · <a href="https://arxiv.org/abs/1503.02531">1503.02531</a></li>
+        <li>Schulman+ 2017 — PPO · <a href="https://arxiv.org/abs/1707.06347">1707.06347</a></li>
+        <li>Sanh+ 2019 — DistilBERT · <a href="https://arxiv.org/abs/1910.01108">1910.01108</a></li>
+        <li>Wortsman+ 2022 — Model Soups · <a href="https://arxiv.org/abs/2203.05482">2203.05482</a></li>
+        <li>Li+ 2022 — Branch-Train-Merge · <a href="https://arxiv.org/abs/2208.03306">2208.03306</a></li>
+        <li>Lightman+ 2023 — Let's Verify · <a href="https://arxiv.org/abs/2305.20050">2305.20050</a></li>
+        <li>Rafailov+ 2023 — DPO · <a href="https://arxiv.org/abs/2305.18290">2305.18290</a></li>
+        <li>Zheng+ 2023 — LLM-as-a-Judge · <a href="https://arxiv.org/abs/2306.05685">2306.05685</a></li>
+        <li>Gu+ 2023 — MiniLLM · <a href="https://arxiv.org/abs/2306.08543">2306.08543</a></li>
+        <li>Yuan+ 2024 — Self-Rewarding · <a href="https://arxiv.org/abs/2401.10020">2401.10020</a></li>
+        <li>Shao+ 2024 — GRPO/DeepSeekMath · <a href="https://arxiv.org/abs/2402.03300">2402.03300</a></li>
+        <li>Zhang+ 2024 — GenRM · <a href="https://arxiv.org/abs/2408.15240">2408.15240</a></li>
+        <li>Lu &amp; TML 2025 — On-Policy Distillation</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 20 design system (live + editable) -->
+<section class="slide ds-slide">
+  <h1>appendix · design system</h1>
+  <h2>this slide is live — every control mutates the deck's CSS variables and persists with save</h2>
+  <hr class="rule">
+  <div class="ds-grid">
+    <div>
+      <div class="ds-section">
+        <h3>colors <span style="color:var(--dim);font-size:var(--t-caption);font-weight:400">— click swatch to pick</span></h3>
+        <div class="ds-tokens" id="ds-colors"></div>
+      </div>
+    </div>
+    <div>
+      <div class="ds-section">
+        <h3>type ramp <span style="color:var(--dim);font-size:var(--t-caption);font-weight:400">— affects every instance of the class</span></h3>
+        <div class="ds-tokens" id="ds-type"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <h3>components <span style="color:var(--dim);font-size:var(--t-caption);font-weight:400">— live preview using current tokens</span></h3>
+    <div class="ds-components">
+      <div class="ds-component">
+        <div class="ds-component-label">.card</div>
+        <div class="card" style="width:200px"><h3>card heading</h3><p>example body text inside a card.</p></div>
+      </div>
+      <div class="ds-component">
+        <div class="ds-component-label">.stat</div>
+        <div class="stat" style="width:160px"><span class="num">42</span><span class="lbl">stat label</span></div>
+      </div>
+      <div class="ds-component">
+        <div class="ds-component-label">.spark</div>
+        <div class="spark" style="max-width:240px">a "why exciting" callout block.</div>
+      </div>
+      <div class="ds-component">
+        <div class="ds-component-label">.pill</div>
+        <div>
+          <span class="pill">default</span>
+          <span class="pill ok">ok</span>
+          <span class="pill warn">warn</span>
+          <span class="pill acc">acc</span>
+          <span class="pill cite">cite</span>
+        </div>
+      </div>
+      <div class="ds-component">
+        <div class="ds-component-label">.refs</div>
+        <div class="refs" style="border:none;padding:0">
+          <span class="ref"><b>Sample 2025</b> · <a href="#">arxiv-id</a></span>
+          <span class="ref"><b>Other 2024</b> · <a href="#">other-id</a></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <h3>raw overrides <span style="color:var(--dim);font-size:var(--t-caption);font-weight:400">— what gets baked into <code>&lt;style id="theme-overrides"&gt;</code> on save</span></h3>
+    <pre class="ds-raw" id="ds-raw"><span class="empty">no overrides · matches base design system</span></pre>
+  </div>
+</section>
+
+</div>
+
+<div class="ebar" id="ebar">
+  <span class="lbl">edit</span>
+  <button id="eb-toggle" title="toggle edit mode">off</button>
+  <span class="sep"></span>
+  <button id="eb-undo" title="undo (⌘Z)">↶</button>
+  <button id="eb-redo" title="redo (⌘⇧Z)">↷</button>
+  <button id="eb-history" title="show edit log">log</button>
+  <span class="sep"></span>
+  <button id="eb-save" title="commit edits back to slides.html (clears the log)">save</button>
+  <button id="eb-download" title="download current state as HTML">download</button>
+  <button id="eb-revert" title="discard all unsaved ops and reload from disk">revert</button>
+  <span class="sep"></span>
+  <span class="count" id="eb-count">clean</span>
+  <span class="dot" id="eb-status" title="clean"></span>
+</div>
+<div class="hp" id="eb-hist-panel">
+  <div class="hp-head">
+    <span><b>edit log</b> · click an entry to jump to it</span>
+    <span><a id="eb-hp-close" title="close">×</a></span>
+  </div>
+  <div class="hp-list"></div>
+  <div class="hp-foot">
+    <span><span style="color:var(--accent2)">●</span> applied &nbsp; <span style="color:var(--dim)">●</span> undone</span>
+    <span>save = clear log + write disk</span>
+  </div>
+</div>
+
+<div class="hud">
+  <div class="title">deepseek-v4 · ground-up walkthrough</div>
+  <div class="nav">
+    <button id="prev">← prev</button>
+    <button id="next">next →</button>
+  </div>
+  <div class="ctr"><span id="cur">1</span> / <span id="tot">1</span></div>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const cur=document.getElementById('cur'),tot=document.getElementById('tot');
+  tot.textContent=slides.length;
+  let i=0;
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    cur.textContent=i+1;
+    location.hash=i+1;
+  }
+  document.getElementById('next').onclick=()=>show(i+1);
+  document.getElementById('prev').onclick=()=>show(i-1);
+  document.addEventListener('keydown',e=>{
+    // don't hijack keys while user is editing text
+    if(document.activeElement && document.activeElement.isContentEditable) return;
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown')show(i+1);
+    else if(e.key==='ArrowLeft'||e.key==='PageUp')show(i-1);
+    else if(e.key==='Home')show(0);
+    else if(e.key==='End')show(slides.length-1);
+  });
+  const start=parseInt(location.hash.slice(1))-1;
+  show(Number.isFinite(start)&&start>=0?start:0);
+
+  /* ────────────── editing layer (op-log) ────────────── */
+  // selectors for elements that are safe to make editable
+  const EDITABLE_SEL = [
+    'h1','h2','h3','p','li','td','th','code',
+    '.figcap','.stat .num','.stat .lbl','.spark','.pill',
+    '.title-slide .big','.title-slide .sub','.title-slide .meta'
+  ].join(',');
+
+  const LOG_KEY = 'deepseek-v4-slides::oplog::v2';
+  const FH_DB = 'deepseek-v4-slides-fh';
+
+  const $ = id => document.getElementById(id);
+  const status = $('eb-status'), countEl = $('eb-count');
+  const btnToggle = $('eb-toggle'), btnSave = $('eb-save'),
+        btnDownload = $('eb-download'), btnRevert = $('eb-revert'),
+        btnUndo = $('eb-undo'), btnRedo = $('eb-redo'),
+        btnHistory = $('eb-history');
+  const histPanel = $('eb-hist-panel');
+
+  // ── log model ──
+  // log = { ops: [{path, before, after, ts}], head: int }
+  // ops[0..head-1] are applied; ops[head..] are undone-but-redoable.
+  let log = { ops: [], head: 0 };
+  let pending = null;          // { path, before, after } for the focused element
+  let suppressInput = false;   // true while we're programmatically setting innerHTML
+
+  function loadLog(){
+    try{
+      const raw = localStorage.getItem(LOG_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        if(parsed && Array.isArray(parsed.ops)){ log = parsed; }
+      }
+    }catch(e){ console.warn('log load failed', e); }
+  }
+  function persistLog(){
+    try{ localStorage.setItem(LOG_KEY, JSON.stringify(log)); }
+    catch(e){ console.warn('localStorage full', e); }
+  }
+  function updateStatus(){
+    const n = log.head;
+    countEl.textContent = n === 0 ? 'clean' : (n + (n===1 ? ' edit' : ' edits'));
+    countEl.classList.toggle('dirty', n>0);
+    status.classList.toggle('dirty', n>0);
+    btnUndo.disabled = log.head === 0;
+    btnRedo.disabled = log.head === log.ops.length;
+    if(histPanel.classList.contains('open')) renderHistory();
+  }
+
+  // ── path identity (structural address within #deck) ──
+  function pathFor(el){
+    const parts=[];
+    let cur=el;
+    while(cur && cur.id !== 'deck'){
+      const p = cur.parentElement;
+      if(!p) break;
+      const idx = [...p.children].indexOf(cur);
+      parts.unshift(cur.tagName.toLowerCase()+':'+idx);
+      cur = p;
+    }
+    return parts.join('>');
+  }
+  function elemAt(path){
+    if(!path) return null;
+    let cur = document.getElementById('deck');
+    for(const part of path.split('>')){
+      if(!cur) return null;
+      const [tag, idx] = part.split(':');
+      const child = cur.children[+idx];
+      if(!child || child.tagName.toLowerCase() !== tag) return null;
+      cur = child;
+    }
+    return cur;
+  }
+
+  // ── op commit (with coalescing) ──
+  // op shape:
+  //   content: { kind:'content', path, before, after, ts }
+  //   theme:   { kind:'theme',   token, before, after, ts }
+  // legacy ops without `kind` are treated as content.
+  const COALESCE_MS = 30_000;
+  function opKey(op){ return (op.kind === 'theme') ? 't:'+op.token : 'c:'+(op.path||''); }
+  function commitOp(op){
+    if(!op.kind) op.kind = 'content';
+    if(op.before === op.after) return;
+    // truncate forward log if user edits after an undo
+    if(log.head < log.ops.length) log.ops.length = log.head;
+    const prev = log.ops[log.ops.length - 1];
+    if(prev && opKey(prev) === opKey(op)
+       && Date.parse(op.ts) - Date.parse(prev.ts) < COALESCE_MS){
+      prev.after = op.after;
+      prev.ts = op.ts;
+      if(prev.before === prev.after){ log.ops.pop(); }
+      log.head = log.ops.length;
+    } else {
+      log.ops.push(op);
+      log.head = log.ops.length;
+    }
+    persistLog(); updateStatus();
+    if(op.kind === 'theme'){ refreshThemeUI(); refreshRawOverrides(); }
+  }
+
+  // ── theme op application ──
+  // empty `value` = remove the inline override (fall back to base CSS).
+  function setThemeRaw(token, value){
+    if(value === '' || value == null){
+      document.documentElement.style.removeProperty(token);
+    } else {
+      document.documentElement.style.setProperty(token, value);
+    }
+  }
+  function currentThemeValue(token){
+    // inline override wins; otherwise computed (= base CSS or already-baked block)
+    const inline = document.documentElement.style.getPropertyValue(token);
+    if(inline) return inline.trim();
+    return getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  }
+  function inlineThemeMap(){
+    const m = {};
+    for(const prop of document.documentElement.style){
+      if(prop.startsWith('--')){
+        m[prop] = document.documentElement.style.getPropertyValue(prop).trim();
+      }
+    }
+    return m;
+  }
+  function recordThemeChange(token, before, after){
+    if(before === after) return;
+    commitOp({ kind:'theme', token, before, after, ts: new Date().toISOString() });
+  }
+
+  // ── pending-op capture (focus → blur / idle) ──
+  let idleTimer = null;
+  function startPending(el){
+    if(pending) flushPending();
+    pending = { path: pathFor(el), before: el.innerHTML, after: el.innerHTML };
+  }
+  function updatePending(el){
+    const p = pathFor(el);
+    if(!pending || pending.path !== p) startPending(el);
+    pending.after = el.innerHTML;
+  }
+  function flushPending(){
+    if(!pending) return;
+    if(pending.before !== pending.after){
+      commitOp({ path: pending.path, before: pending.before,
+                 after: pending.after, ts: new Date().toISOString() });
+    }
+    pending = null;
+  }
+  function bumpIdle(){
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(flushPending, 1500);
+  }
+
+  document.addEventListener('focusin', e=>{
+    if(e.target.isContentEditable) startPending(e.target);
+  });
+  document.addEventListener('focusout', e=>{
+    if(e.target.isContentEditable) flushPending();
+  });
+  document.addEventListener('input', e=>{
+    if(suppressInput) return;
+    if(!e.target.isContentEditable) return;
+    updatePending(e.target);
+    bumpIdle();
+  });
+
+  // ── editable mode ──
+  function applyEditableAttr(on){
+    document.querySelectorAll('#deck '+EDITABLE_SEL).forEach(el=>{
+      if(el.closest('.ebar')) return;
+      if(on){ el.setAttribute('contenteditable','true'); el.spellcheck = false; }
+      else { el.removeAttribute('contenteditable'); }
+    });
+    document.body.classList.toggle('editing', on);
+    btnToggle.classList.toggle('on', on);
+    btnToggle.textContent = on ? 'on' : 'off';
+  }
+  btnToggle.onclick = ()=>{
+    applyEditableAttr(!document.body.classList.contains('editing'));
+  };
+
+  // ── undo / redo ──
+  function setHTMLSilently(el, html){
+    suppressInput = true;
+    el.innerHTML = html;
+    setTimeout(()=>{ suppressInput = false; }, 0);
+  }
+  function flashElement(el, color){
+    if(!el) return;
+    const prev = el.style.boxShadow, prevT = el.style.transition;
+    el.style.transition = 'box-shadow 0.4s';
+    el.style.boxShadow = '0 0 0 2px '+color;
+    setTimeout(()=>{ el.style.boxShadow = prev; el.style.transition = prevT; }, 700);
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+  function undo(){
+    flushPending();
+    if(log.head === 0) return;
+    const op = log.ops[log.head - 1];
+    if(op.kind === 'theme'){
+      setThemeRaw(op.token, op.before);
+      refreshThemeUI(); refreshRawOverrides();
+    } else {
+      const el = elemAt(op.path);
+      if(el){ setHTMLSilently(el, op.before); flashElement(el, '#e8b86b'); }
+    }
+    log.head--;
+    persistLog(); updateStatus();
+  }
+  function redo(){
+    flushPending();
+    if(log.head === log.ops.length) return;
+    const op = log.ops[log.head];
+    if(op.kind === 'theme'){
+      setThemeRaw(op.token, op.after);
+      refreshThemeUI(); refreshRawOverrides();
+    } else {
+      const el = elemAt(op.path);
+      if(el){ setHTMLSilently(el, op.after); flashElement(el, '#9ed27a'); }
+    }
+    log.head++;
+    persistLog(); updateStatus();
+  }
+  btnUndo.onclick = undo;
+  btnRedo.onclick = redo;
+  document.addEventListener('keydown', e=>{
+    const meta = e.metaKey || e.ctrlKey;
+    if(meta && !e.shiftKey && (e.key === 'z' || e.key === 'Z')){ e.preventDefault(); undo(); }
+    else if(meta && ((e.shiftKey && (e.key === 'z' || e.key === 'Z')) || e.key === 'y' || e.key === 'Y')){
+      e.preventDefault(); redo();
+    }
+  });
+
+  // ── replay applied ops on load ──
+  function replayLog(){
+    for(let k=0; k<log.head; k++){
+      const op = log.ops[k];
+      if(op.kind === 'theme'){
+        setThemeRaw(op.token, op.after);
+      } else {
+        const el = elemAt(op.path);
+        if(el && el.innerHTML !== op.after) el.innerHTML = op.after;
+      }
+    }
+  }
+
+  // ── history panel ──
+  $('eb-hp-close').onclick = ()=>histPanel.classList.remove('open');
+  btnHistory.onclick = ()=>{
+    histPanel.classList.toggle('open');
+    if(histPanel.classList.contains('open')) renderHistory();
+  };
+  function plain(html){
+    const t = (html||'').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+    return t.length > 50 ? t.slice(0,47)+'…' : t;
+  }
+  function whereLabel(path){
+    const segs = path.split('>');
+    // try to find the section index
+    const sectionSeg = segs[0]||'';
+    const m = sectionSeg.match(/section:(\d+)/);
+    const slide = m ? 'slide '+(+m[1]+1) : sectionSeg;
+    const tail = segs[segs.length-1].split(':')[0];
+    return slide + ' · ' + tail;
+  }
+  function escapeHtml(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]); }
+  function renderHistory(){
+    const list = histPanel.querySelector('.hp-list');
+    list.innerHTML = '';
+    if(log.ops.length === 0){
+      list.innerHTML = '<div class="hp-empty">no ops · saved state matches disk</div>';
+      return;
+    }
+    log.ops.forEach((op, k)=>{
+      const div = document.createElement('div');
+      const isTheme = op.kind === 'theme';
+      div.className = 'hp-row '+(k < log.head ? 'applied' : 'unredone') + (isTheme ? ' theme' : '');
+      const ts = new Date(op.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const where = isTheme ? ('theme · '+escapeHtml(op.token)) : escapeHtml(whereLabel(op.path||''));
+      const diff = isTheme
+        ? escapeHtml((op.before||'<base>')+' → '+(op.after||'<base>'))
+        : '"'+escapeHtml(plain(op.before))+'" → "'+escapeHtml(plain(op.after))+'"';
+      div.innerHTML =
+        '<span class="hp-ts">'+ts+'</span>'+
+        '<span class="hp-where">'+where+'</span>'+
+        '<span class="hp-diff">'+diff+'</span>';
+      div.title = (isTheme ? op.token : op.path) + '\n\nbefore: '+(op.before||'')+'\nafter:  '+(op.after||'');
+      div.onclick = ()=>{
+        if(isTheme){
+          const dsSlide = document.querySelector('.ds-slide');
+          if(dsSlide){
+            const idx = [...document.querySelectorAll('.slide')].indexOf(dsSlide);
+            if(idx>=0) show(idx);
+            const ctrl = document.querySelector('[data-ds-token="'+op.token+'"]');
+            if(ctrl) flashElement(ctrl, '#e8b86b');
+          }
+        } else {
+          const el = elemAt(op.path);
+          if(el) flashElement(el, '#7aa2ff');
+        }
+      };
+      list.appendChild(div);
+    });
+  }
+
+  // ── revert ──
+  btnRevert.onclick = ()=>{
+    const n = log.ops.length;
+    if(n === 0){ if(!confirm('No local ops. Reload anyway?')) return; }
+    else if(!confirm('Discard '+n+' op'+(n===1?'':'s')+' and reload from disk?')) return;
+    localStorage.removeItem(LOG_KEY);
+    location.reload();
+  };
+
+  // ── serialize for save / download ──
+  function bakeThemeBlock(clone){
+    // merge: parse any existing #theme-overrides in the clone for prior overrides,
+    // then layer current inline overrides on top.
+    const merged = {};
+    const existing = clone.querySelector('#theme-overrides');
+    if(existing){
+      const re = /(--[\w-]+)\s*:\s*([^;]+);/g;
+      let m;
+      while((m = re.exec(existing.textContent)) !== null){
+        merged[m[1]] = m[2].trim();
+      }
+    }
+    const inline = inlineThemeMap();
+    for(const k in inline){ merged[k] = inline[k]; }
+
+    const keys = Object.keys(merged);
+    if(keys.length === 0){
+      if(existing) existing.remove();
+      return;
+    }
+    const css = ':root{\n' + keys.map(k=>'  '+k+': '+merged[k]+';').join('\n') + '\n}';
+    if(existing){ existing.textContent = css; }
+    else {
+      const head = clone.querySelector('head');
+      const styleEl = clone.ownerDocument.createElement('style');
+      styleEl.id = 'theme-overrides';
+      styleEl.textContent = css;
+      head.appendChild(styleEl);
+    }
+  }
+  function serializeDoc(){
+    flushPending();
+    const clone = document.documentElement.cloneNode(true);
+    clone.querySelectorAll('[contenteditable]').forEach(n=>n.removeAttribute('contenteditable'));
+    clone.querySelectorAll('[spellcheck]').forEach(n=>n.removeAttribute('spellcheck'));
+    const body = clone.querySelector('body');
+    if(body) body.classList.remove('editing');
+    const hp = clone.querySelector('#eb-hist-panel');
+    if(hp) hp.classList.remove('open');
+    // strip transient inline styles on <html> (we'll bake them into a <style> block)
+    clone.removeAttribute('style');
+    bakeThemeBlock(clone);
+    return '<!doctype html>\n' + clone.outerHTML;
+  }
+  function downloadCurrent(){
+    const blob = new Blob([serializeDoc()], {type:'text/html'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'slides.html';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 100);
+  }
+  btnDownload.onclick = downloadCurrent;
+
+  // ── File System Access API persistence ──
+  function idb(){
+    return new Promise((res,rej)=>{
+      const req = indexedDB.open(FH_DB, 1);
+      req.onupgradeneeded = ()=>{ req.result.createObjectStore('h'); };
+      req.onsuccess = ()=>res(req.result);
+      req.onerror = ()=>rej(req.error);
+    });
+  }
+  async function getStoredHandle(){
+    try{
+      const db = await idb();
+      return await new Promise((res)=>{
+        const tx = db.transaction('h','readonly').objectStore('h').get('file');
+        tx.onsuccess = ()=>res(tx.result || null);
+        tx.onerror = ()=>res(null);
+      });
+    }catch(e){ return null; }
+  }
+  async function setStoredHandle(h){
+    const db = await idb();
+    return new Promise((res)=>{
+      const tx = db.transaction('h','readwrite').objectStore('h').put(h,'file');
+      tx.onsuccess = ()=>res(true);
+      tx.onerror = ()=>res(false);
+    });
+  }
+  async function ensurePermission(handle, mode='readwrite'){
+    if(!handle.queryPermission) return true;
+    if(await handle.queryPermission({mode}) === 'granted') return true;
+    return (await handle.requestPermission({mode})) === 'granted';
+  }
+
+  btnSave.onclick = async ()=>{
+    btnSave.disabled = true;
+    try{
+      if('showOpenFilePicker' in window){
+        let handle = await getStoredHandle();
+        if(handle && !(await ensurePermission(handle))) handle = null;
+        if(!handle){
+          const picked = await window.showOpenFilePicker({
+            types:[{description:'HTML', accept:{'text/html':['.html','.htm']}}],
+            suggestedName:'slides.html'
+          });
+          handle = picked[0];
+          await setStoredHandle(handle);
+        }
+        const w = await handle.createWritable();
+        await w.write(serializeDoc());
+        await w.close();
+        // commit succeeded — log is now baked into the file
+        log = { ops: [], head: 0 };
+        persistLog(); updateStatus();
+        status.classList.add('saved');
+        btnSave.textContent = 'saved ✓';
+        setTimeout(()=>{ btnSave.textContent = 'save'; status.classList.remove('saved'); }, 1400);
+      } else {
+        downloadCurrent();
+        alert('Your browser does not support direct file write. The current state was downloaded as slides.html — replace the file in the project directory to persist. Local op log is preserved.');
+      }
+    } catch(e){
+      if(e && e.name === 'AbortError'){ /* user cancelled */ }
+      else { console.error(e); alert('Save failed: '+(e.message||e)); }
+    } finally {
+      btnSave.disabled = false;
+    }
+  };
+
+  // ── design-system slide ──
+  // token registry: ordered for display
+  const COLOR_TOKENS = [
+    {token:'--bg',     label:'bg',     desc:'page background'},
+    {token:'--fg',     label:'fg',     desc:'main text'},
+    {token:'--dim',    label:'dim',    desc:'secondary text'},
+    {token:'--line',   label:'line',   desc:'borders / dividers'},
+    {token:'--accent', label:'accent', desc:'primary highlight (h3, links)'},
+    {token:'--accent2',label:'accent2',desc:'success / code'},
+    {token:'--warn',   label:'warn',   desc:'amber callouts'},
+    {token:'--pink',   label:'pink',   desc:'pink (unused but available)'},
+    {token:'--code',   label:'code',   desc:'code block bg'}
+  ];
+  const TYPE_TOKENS = [
+    {token:'--t-mega',    label:'mega',    desc:'title-slide hero',  min:24, max:80},
+    {token:'--t-h1',      label:'h1',      desc:'slide heading',     min:14, max:48},
+    {token:'--t-h2',      label:'h2',      desc:'slide subheading',  min:10, max:32},
+    {token:'--t-h3',      label:'h3',      desc:'section heading',   min:9,  max:24},
+    {token:'--t-body',    label:'body',    desc:'p / li',            min:9,  max:22},
+    {token:'--t-small',   label:'small',   desc:'small text / code', min:8,  max:18},
+    {token:'--t-caption', label:'caption', desc:'captions / hints',  min:8,  max:16}
+  ];
+
+  // hex-color helpers — accept #rgb, #rrggbb, return canonical #rrggbb
+  function normalizeHex(s){
+    if(!s) return null;
+    s = s.trim();
+    if(/^#([0-9a-fA-F]{3})$/.test(s)){
+      const m = s.slice(1);
+      return '#'+m[0]+m[0]+m[1]+m[1]+m[2]+m[2];
+    }
+    if(/^#([0-9a-fA-F]{6})$/.test(s)) return s.toLowerCase();
+    return null;
+  }
+  // browsers compute colors as rgb(r, g, b); for the picker we need hex.
+  function computedToHex(token){
+    const v = currentThemeValue(token);
+    const n = normalizeHex(v);
+    if(n) return n;
+    const m = v.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if(m){
+      const h = n => (+n).toString(16).padStart(2,'0');
+      return '#'+h(m[1])+h(m[2])+h(m[3]);
+    }
+    return '#000000';
+  }
+  function pxToNum(v){
+    if(!v) return NaN;
+    const m = (''+v).match(/(-?\d+(?:\.\d+)?)/);
+    return m ? +m[1] : NaN;
+  }
+
+  function buildColorRow(spec){
+    const row = document.createElement('div');
+    row.className = 'ds-row';
+    row.dataset.dsToken = spec.token;
+    const hex = computedToHex(spec.token);
+    row.innerHTML = `
+      <span class="ds-name" title="${spec.desc}">${spec.label}</span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <input type="color" class="ds-swatch" data-ds-color="${spec.token}" value="${hex}">
+        <span class="ds-name" style="color:var(--fg)">${spec.token}</span>
+      </span>
+      <input type="text" class="ds-hex" data-ds-hex="${spec.token}" value="${hex}" spellcheck="false">
+      <button class="ds-reset" data-ds-reset="${spec.token}" title="reset to base">reset</button>
+    `;
+    return row;
+  }
+  function buildTypeRow(spec){
+    const row = document.createElement('div');
+    row.className = 'ds-type-row';
+    row.dataset.dsToken = spec.token;
+    const px = pxToNum(currentThemeValue(spec.token));
+    row.innerHTML = `
+      <span class="ds-name" title="${spec.desc}">${spec.label}</span>
+      <span class="ds-type-sample" style="font-size:var(${spec.token})">The quick brown fox</span>
+      <input type="number" class="ds-num" data-ds-num="${spec.token}" min="${spec.min}" max="${spec.max}" step="0.5" value="${px}">
+      <button class="ds-reset" data-ds-reset="${spec.token}" title="reset to base">reset</button>
+    `;
+    return row;
+  }
+
+  function initDesignSystem(){
+    const colorWrap = $('ds-colors');
+    const typeWrap = $('ds-type');
+    if(!colorWrap || !typeWrap) return;
+    COLOR_TOKENS.forEach(s => colorWrap.appendChild(buildColorRow(s)));
+    TYPE_TOKENS.forEach(s => typeWrap.appendChild(buildTypeRow(s)));
+
+    // ── delegated handlers ──
+    function onChangeColor(token, newHex){
+      const before = document.documentElement.style.getPropertyValue(token).trim();
+      const after = newHex;
+      if(before === after) return;
+      setThemeRaw(token, after);
+      recordThemeChange(token, before, after);
+    }
+    function onChangeNum(token, newPx){
+      const before = document.documentElement.style.getPropertyValue(token).trim();
+      const after = newPx + 'px';
+      if(before === after) return;
+      setThemeRaw(token, after);
+      recordThemeChange(token, before, after);
+    }
+    function onReset(token){
+      const before = document.documentElement.style.getPropertyValue(token).trim();
+      if(!before) return;  // already at base
+      setThemeRaw(token, '');  // remove inline override
+      recordThemeChange(token, before, '');
+    }
+
+    document.addEventListener('input', e=>{
+      const t = e.target;
+      if(t.dataset.dsColor){ onChangeColor(t.dataset.dsColor, t.value); }
+      else if(t.dataset.dsHex){
+        const norm = normalizeHex(t.value);
+        if(norm){ t.style.borderColor = ''; onChangeColor(t.dataset.dsHex, norm); }
+        else { t.style.borderColor = 'var(--warn)'; }
+      }
+      else if(t.dataset.dsNum){
+        const v = +t.value;
+        if(isFinite(v) && v > 0) onChangeNum(t.dataset.dsNum, v);
+      }
+    });
+    document.addEventListener('click', e=>{
+      const t = e.target;
+      if(t.dataset && t.dataset.dsReset){ onReset(t.dataset.dsReset); }
+    });
+  }
+
+  // keep design-system slide controls in sync with current theme state
+  function refreshThemeUI(){
+    document.querySelectorAll('[data-ds-color]').forEach(el=>{
+      const v = computedToHex(el.dataset.dsColor);
+      if(el.value !== v) el.value = v;
+    });
+    document.querySelectorAll('[data-ds-hex]').forEach(el=>{
+      const v = computedToHex(el.dataset.dsHex);
+      if(el.value !== v){ el.value = v; el.style.borderColor = ''; }
+    });
+    document.querySelectorAll('[data-ds-num]').forEach(el=>{
+      const v = pxToNum(currentThemeValue(el.dataset.dsNum));
+      if(+el.value !== v) el.value = v;
+    });
+  }
+  function refreshRawOverrides(){
+    const pre = $('ds-raw');
+    if(!pre) return;
+    const m = inlineThemeMap();
+    const keys = Object.keys(m);
+    if(keys.length === 0){
+      pre.innerHTML = '<span class="empty">no overrides · matches base design system</span>';
+      return;
+    }
+    pre.textContent = ':root{\n' + keys.map(k=>'  '+k+': '+m[k]+';').join('\n') + '\n}';
+  }
+
+  // ── boot ──
+  loadLog();
+  replayLog();
+  initDesignSystem();
+  refreshThemeUI();
+  refreshRawOverrides();
+  updateStatus();
+
+  // warn before unload if there are unsaved ops
+  window.addEventListener('beforeunload', e=>{
+    if(log.head > 0){ e.preventDefault(); e.returnValue=''; }
+  });
+</script>
+</body>
+</html>
