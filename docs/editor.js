@@ -60,6 +60,20 @@
       const blk = document.getElementById('live-html-config');
       if (blk && blk.textContent.trim()) Object.assign(cfg, JSON.parse(blk.textContent));
     } catch (e) { console.warn('[live-html] bad #live-html-config', e); }
+    // forgive common config shapes: accept editableSelector (singular,string-or-array)
+    // as an alias for editableSelectors (plural,array). also accept array OR comma-string.
+    const alias = cfg.editableSelector;
+    if (alias != null) {
+      cfg.editableSelectors = Array.isArray(alias)
+        ? alias
+        : String(alias).split(',').map(s => s.trim()).filter(Boolean);
+    } else if (typeof cfg.editableSelectors === 'string') {
+      cfg.editableSelectors = cfg.editableSelectors.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (!Array.isArray(cfg.editableSelectors) || cfg.editableSelectors.length === 0) {
+      console.warn('[live-html] editableSelectors missing or invalid; using defaults');
+      cfg.editableSelectors = DEFAULTS.editableSelectors;
+    }
     return cfg;
   }
   const CFG = readConfig();
