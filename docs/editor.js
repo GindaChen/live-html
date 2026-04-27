@@ -46,7 +46,10 @@
       'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
       'p', 'li', 'td', 'th', 'code', 'blockquote', 'figcaption',
       'dt', 'dd', 'summary', 'caption'
-    ]
+    ],
+    // start with edit mode already on (good for live demos / always-edit decks).
+    // host page can set { "editOnByDefault": true } in the JSON config block.
+    editOnByDefault: false
   };
   function readConfig() {
     const cfg = Object.assign({}, DEFAULTS);
@@ -676,6 +679,7 @@
     refreshThemeUI();
     refreshRawOverrides();
     updateStatus();
+    if (CFG.editOnByDefault) applyEditableAttr(true);
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
