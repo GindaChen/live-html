@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>live-html · the rendered page is the source</title>
+<meta name="description" content="A single-file HTML page that edits itself in the browser and writes the edits back to disk. No build step, no framework.">
+
+<link rel="stylesheet" href="./editor.css">
+
+<style>
+  :root{
+    --bg:#0e0f12;
+    --fg:#d7dadf;
+    --dim:#8a8f99;
+    --line:#262932;
+    --accent:#7aa2ff;
+    --accent2:#9ed27a;
+    --warn:#e8b86b;
+    --pink:#e58fb0;
+    --code:#1a1c22;
+
+    --t-mega:54px;
+    --t-h1:28px;
+    --t-h2:16px;
+    --t-h3:13px;
+    --t-body:14px;
+    --t-small:12px;
+    --t-caption:11px;
+
+    --ff-mono:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+
+    --maxw:980px;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
+    font-family:var(--ff-mono);font-size:var(--t-body);line-height:1.55;
+    -webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{background:var(--code);padding:1px 5px;border-radius:3px;
+    font-size:var(--t-small);color:var(--accent2)}
+  pre{background:var(--code);padding:12px 14px;border-radius:4px;overflow:auto;
+    font-size:11.5px;color:#cfd5e3;border:1px solid var(--line);margin:0}
+  hr.rule{border:0;border-top:1px solid var(--line);margin:0}
+
+  /* layout */
+  main{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+  section{padding:48px 0;border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:none}
+
+  /* hero */
+  .hero{padding:120px 0 80px;border-bottom:1px solid var(--line)}
+  .hero .eyebrow{color:var(--warn);font-size:var(--t-caption);
+    text-transform:lowercase;margin-bottom:18px}
+  .hero h1{font-size:var(--t-mega);font-weight:700;letter-spacing:-0.025em;
+    margin:0 0 16px;line-height:1.05;max-width:780px}
+  .hero h1 em{font-style:normal;color:var(--accent)}
+  .hero .sub{font-size:var(--t-h2);color:var(--dim);max-width:680px;
+    margin:0 0 32px;line-height:1.6}
+  .hero .meta{color:var(--dim);font-size:var(--t-small);display:flex;gap:16px;flex-wrap:wrap}
+  .hero .meta .pill{border:1px solid var(--line);border-radius:99px;padding:3px 10px}
+  .hero .meta .pill.acc{color:var(--accent);border-color:#28406a}
+
+  /* try-me callout */
+  .trybox{border:1px solid var(--accent);border-radius:6px;padding:18px 22px;
+    background:#13151a;display:flex;gap:16px;align-items:center;margin-top:36px}
+  .trybox .arrow{color:var(--accent);font-size:22px;flex-shrink:0}
+  .trybox .body{flex:1}
+  .trybox h3{margin:0 0 4px;color:var(--accent);font-size:13px;font-weight:600}
+  .trybox p{margin:0;color:var(--fg);font-size:var(--t-small)}
+  .trybox .kbd{background:var(--code);border:1px solid var(--line);border-radius:3px;
+    padding:1px 6px;font-size:11px;color:var(--accent2)}
+
+  /* section heads */
+  section h2.section-title{font-size:var(--t-h1);font-weight:600;letter-spacing:-0.01em;
+    margin:0 0 6px}
+  section .section-sub{color:var(--dim);font-size:var(--t-h2);margin:0 0 28px}
+
+  /* card grid */
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  .card{border:1px solid var(--line);border-radius:5px;padding:20px 22px;background:#13151a}
+  .card h3{margin:0 0 8px;color:var(--accent);font-size:13px;font-weight:600;
+    text-transform:lowercase}
+  .card p{margin:0 0 8px;font-size:var(--t-body);color:var(--fg)}
+  .card p:last-child{margin-bottom:0}
+  .card .tag{font-size:10.5px;color:var(--dim);text-transform:lowercase;
+    letter-spacing:0.04em;margin-bottom:10px}
+
+  /* design-system live editor styles (mirrors slides deck) */
+  .ds-slide{padding:48px 0;border-bottom:1px solid var(--line)}
+  .ds-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:18px}
+  .ds-section{margin-bottom:22px}
+  .ds-section h3{font-size:var(--t-h3);color:var(--accent);font-weight:600;
+    margin:14px 0 10px;letter-spacing:0.02em}
+  .ds-tokens{display:flex;flex-direction:column;gap:6px}
+  .ds-token-row{display:grid;grid-template-columns:90px 28px 1fr 96px;gap:10px;
+    align-items:center;padding:5px 0;border-bottom:1px solid var(--line);font-size:11.5px}
+  .ds-token-row:last-child{border-bottom:none}
+  .ds-token-name{color:var(--dim);font-family:var(--ff-mono)}
+  .ds-swatch{width:22px;height:22px;border-radius:3px;border:1px solid var(--line);
+    cursor:pointer;padding:0}
+  .ds-token-val{color:var(--fg);font-family:var(--ff-mono)}
+  .ds-type-row{display:grid;grid-template-columns:60px 1fr 64px 64px;gap:10px;
+    align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:11.5px}
+  .ds-type-row:last-child{border-bottom:none}
+  .ds-type-sample{color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ds-components{display:flex;flex-wrap:wrap;gap:18px;margin-top:8px}
+  .ds-component{display:flex;flex-direction:column;gap:6px}
+  .ds-component-label{font-size:10.5px;color:var(--dim);text-transform:lowercase}
+  .ds-raw{font-size:11px;line-height:1.55;max-height:160px}
+  .ds-raw .empty{color:var(--dim);font-style:italic}
+
+  /* small components used in the components preview */
+  .stat{display:flex;flex-direction:column;border-left:2px solid var(--accent);
+    padding:2px 10px}
+  .stat .num{font-size:20px;color:var(--fg);font-weight:600}
+  .stat .lbl{color:var(--dim);font-size:11.5px}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:99px;
+    padding:0 8px;font-size:10.5px;color:var(--dim);margin-right:4px;line-height:18px}
+  .pill.ok{color:var(--accent2);border-color:#2c4a2a}
+  .pill.warn{color:var(--warn);border-color:#5a4220}
+  .pill.acc{color:var(--accent);border-color:#28406a}
+  .spark{position:relative;border-left:2px solid var(--warn);padding:6px 12px;
+    background:#181612;border-radius:0 4px 4px 0;font-size:12px}
+  .spark::before{content:"✦ why exciting";display:block;font-size:10px;color:var(--warn);
+    text-transform:lowercase;letter-spacing:0.05em;margin-bottom:2px}
+
+  /* footer */
+  footer{padding:48px 0 80px;color:var(--dim);font-size:var(--t-small)}
+  footer .links{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:14px}
+  footer .links a{color:var(--accent)}
+
+  /* responsive */
+  @media (max-width:720px){
+    .hero{padding:80px 0 60px}
+    .hero h1{font-size:36px}
+    .cards{grid-template-columns:1fr}
+    .ds-grid{grid-template-columns:1fr}
+    main{padding:0 18px}
+  }
+</style>
+
+<script type="application/json" id="live-html-config">
+{
+  "storageKey": "live-html:demo:ops",
+  "coalesceMs": 600,
+  "saveMode": "download",
+  "designSystem": {
+    "container": ".ds-slide",
+    "colors": "#ds-colors",
+    "type": "#ds-type",
+    "rawPreview": "#ds-raw",
+    "themeStyleId": "theme-overrides"
+  },
+  "editableSelector": "h1, h2, h3, h4, p, li, td, .card, .stat, .spark, .ds-component",
+  "shortcuts": {
+    "undo": "mod+z",
+    "redo": "mod+shift+z",
+    "save": "mod+s"
+  }
+}
+</script>
+</head>
+<body>
+
+<main>
+
+  <!-- ── hero ─────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="eyebrow">live-html · v0.1</div>
+    <h1>the rendered page <em>is</em> the source.</h1>
+    <p class="sub">A tiny JS+CSS library that turns any single-file HTML page into a WYSIWYG editor and writes your edits back to disk. No build step, no framework, no database. Just an HTML file that knows how to edit itself.</p>
+    <div class="meta">
+      <span class="pill acc">~one file</span>
+      <span class="pill">contenteditable + op log + File System Access</span>
+      <span class="pill">MIT</span>
+    </div>
+
+    <div class="trybox">
+      <div class="arrow">→</div>
+      <div class="body">
+        <h3>this page is the demo.</h3>
+        <p>Click <span class="kbd">edit</span> in the top-right toolbar, then click any text on this page and start typing. <span class="kbd">⌘Z</span> / <span class="kbd">⌘⇧Z</span> work. The design-system block below is live — drag a color, watch the page recolor. Click <span class="kbd">save</span> to download your edited copy.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── the gap ──────────────────────────────────────────── -->
+  <section>
+    <h2 class="section-title">the gap it fills</h2>
+    <p class="section-sub">every slide stack splits source-edit and rendered-view. nobody round-trips.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="tag">the alternatives</div>
+        <h3>slidev / reveal / marp / spectacle / quarto</h3>
+        <p>All of them are one-way pipelines: write Markdown or JSX, build, render. To fix a typo you spotted on the rendered slide you flip back to the editor and find the line. Hot reload makes this fast — it does not make it round-trip.</p>
+      </div>
+      <div class="card">
+        <div class="tag">the notion-shaped hole</div>
+        <h3>round-trip editors lose the file</h3>
+        <p>Notion, Coda, and friends round-trip just fine — but the artifact is a database row, not a git-friendly file you can commit, diff, grep, or hand to a coauthor.</p>
+      </div>
+      <div class="card">
+        <div class="tag">what live-html does</div>
+        <h3>the rendered DOM is the source of truth</h3>
+        <p>Edits in the browser are captured into a coalesced op log, replayed against the in-memory document, and written back to the original <code>.html</code> file via the File System Access API. The artifact stays a single file. <code>git diff</code> shows what you changed.</p>
+      </div>
+      <div class="card">
+        <div class="tag">why this works</div>
+        <h3>HTML was always editable</h3>
+        <p>The browser has had <code>contenteditable</code> for two decades and FSA writes since 2020. Nothing here is novel. It is a thin glue layer that nobody bothered to ship because everyone was busy building static-site generators.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── architecture ────────────────────────────────────── -->
+  <section>
+    <h2 class="section-title">architecture in 60 seconds</h2>
+    <p class="section-sub">three layers, ~one file, no dependencies.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="tag">layer 1</div>
+        <h3>contenteditable</h3>
+        <p>Toggling edit mode flips <code>contenteditable="true"</code> on every matching node. Native selection, IME, paste — untouched. We add a focus outline and that's it.</p>
+      </div>
+      <div class="card">
+        <div class="tag">layer 2</div>
+        <h3>op log</h3>
+        <p>Each input is captured as <code>{path, prev, next, ts}</code> and coalesced into the previous op if it's the same node within ~600ms. Persisted to <code>localStorage</code> so a refresh keeps your work. Undo walks the log, not the browser stack.</p>
+      </div>
+      <div class="card">
+        <div class="tag">layer 3</div>
+        <h3>File System Access</h3>
+        <p>Save replays the log against <code>documentElement.outerHTML</code>, asks for a writable handle on the original file (cached after first grant), and writes. Safari/Firefox fall back to a download.</p>
+      </div>
+      <div class="card">
+        <div class="tag">special-case</div>
+        <h3>theme ops bake</h3>
+        <p>CSS-variable edits don't mutate inline style — they collect into a single <code>&lt;style id="theme-overrides"&gt;</code> block. One block, one diff, regardless of how many tokens you touched.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── design system live editor ──────────────────────── -->
+  <section class="ds-slide">
+    <h2 class="section-title">design system · live</h2>
+    <p class="section-sub">this block is the editor for this page. every control mutates a CSS variable on <code>:root</code> and persists with save.</p>
+    <hr class="rule">
+
+    <div class="ds-grid">
+      <div>
+        <div class="ds-section">
+          <h3>colors <span style="color:var(--dim);font-size:var(--t-caption);font-weight:400">— click swatch to pick</span></h3>
+          <div class="ds-tokens" id="ds-colors"></div>
+        </div>
+      </div>
+      <div>
+        <div class="ds-section">
+          <h3>type ramp <span style="color:var(--dim);font-size:var(--t-caption);font-weight:400">— affects every instance of the class</span></h3>
+          <div class="ds-tokens" id="ds-type"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ds-section">
+      <h3>components <span style="color:var(--dim);font-size:var(--t-caption);font-weight:400">— live preview using current tokens</span></h3>
+      <div class="ds-components">
+        <div class="ds-component">
+          <div class="ds-component-label">.card</div>
+          <div class="card" style="width:200px"><h3>card heading</h3><p>example body text inside a card.</p></div>
+        </div>
+        <div class="ds-component">
+          <div class="ds-component-label">.stat</div>
+          <div class="stat" style="width:160px"><span class="num">42</span><span class="lbl">stat label</span></div>
+        </div>
+        <div class="ds-component">
+          <div class="ds-component-label">.spark</div>
+          <div class="spark" style="max-width:240px">a "why exciting" callout block.</div>
+        </div>
+        <div class="ds-component">
+          <div class="ds-component-label">.pill</div>
+          <div>
+            <span class="pill">default</span>
+            <span class="pill ok">ok</span>
+            <span class="pill warn">warn</span>
+            <span class="pill acc">acc</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ds-section">
+      <h3>raw overrides <span style="color:var(--dim);font-size:var(--t-caption);font-weight:400">— what gets baked into <code>&lt;style id="theme-overrides"&gt;</code> on save</span></h3>
+      <pre class="ds-raw" id="ds-raw"><span class="empty">no overrides · matches base design system</span></pre>
+    </div>
+  </section>
+
+  <!-- ── how it works ────────────────────────────────────── -->
+  <section>
+    <h2 class="section-title">how it works · the three drops</h2>
+    <p class="section-sub">paste these into any single-file HTML page. that's the install.</p>
+
+    <div class="card" style="margin-bottom:14px">
+      <div class="tag">1 · in &lt;head&gt;</div>
+      <pre>&lt;link rel="stylesheet" href="editor.css"&gt;</pre>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div class="tag">2 · before &lt;/body&gt;</div>
+      <pre>&lt;div class="ebar" id="ebar"&gt;
+  &lt;span class="lbl"&gt;edit&lt;/span&gt;
+  &lt;button id="eb-toggle"&gt;off&lt;/button&gt;
+  &lt;button id="eb-undo"&gt;↶&lt;/button&gt;
+  &lt;button id="eb-redo"&gt;↷&lt;/button&gt;
+  &lt;button id="eb-save"&gt;save&lt;/button&gt;
+  &lt;span class="dot" id="eb-status"&gt;&lt;/span&gt;
+&lt;/div&gt;</pre>
+    </div>
+
+    <div class="card">
+      <div class="tag">3 · last thing in body</div>
+      <pre>&lt;script src="editor.js"&gt;&lt;/script&gt;</pre>
+    </div>
+  </section>
+
+  <!-- ── footer ──────────────────────────────────────────── -->
+  <footer>
+    <div class="links">
+      <a href="https://github.com/gindachen/live-html">github</a>
+      <a href="https://github.com/gindachen/live-html/tree/main/recipes/claude-skill">claude skill</a>
+      <a href="https://github.com/gindachen/live-html/blob/main/LICENSE">MIT license</a>
+      <a href="https://github.com/gindachen/live-html#examples">examples</a>
+    </div>
+    <div>built single-file. edits round-trip. <code>git diff</code> shows what you changed.</div>
+  </footer>
+
+</main>
+
+<!-- ── editor toolbar (live-html ebar) ──────────────────── -->
+<div class="ebar" id="ebar">
+  <span class="lbl">edit</span>
+  <button id="eb-toggle" title="toggle edit mode">off</button>
+  <span class="sep"></span>
+  <button id="eb-undo" title="undo (⌘Z)">↶</button>
+  <button id="eb-redo" title="redo (⌘⇧Z)">↷</button>
+  <button id="eb-history" title="show edit log">log</button>
+  <span class="sep"></span>
+  <button id="eb-save" title="save (downloads on github.io)">save</button>
+  <button id="eb-download" title="download current state as HTML">download</button>
+  <button id="eb-revert" title="discard all unsaved ops">revert</button>
+  <span class="sep"></span>
+  <span class="count" id="eb-count">clean</span>
+  <span class="dot" id="eb-status" title="clean"></span>
+</div>
+<div class="hp" id="eb-hist-panel">
+  <div class="hp-head">
+    <span><b>edit log</b> · click an entry to jump to it</span>
+    <span><a id="eb-hp-close" title="close">×</a></span>
+  </div>
+  <div class="hp-list"></div>
+  <div class="hp-foot">
+    <span><span style="color:var(--accent2)">●</span> applied &nbsp; <span style="color:var(--dim)">●</span> undone</span>
+    <span>save = download (github.io is read-only)</span>
+  </div>
+</div>
+
+<script src="./editor.js"></script>
+
+</body>
+</html>

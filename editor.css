@@ -1,0 +1,165 @@
+/* ──────────────────────────────────────────────────────────────────
+ * live-html · editor.css
+ * Styling for the editing toolbar, history panel, edit-mode outlines,
+ * and (optional) design-system slide.
+ *
+ * Tokens fall back to safe defaults if the host page has not defined
+ * them. If the host page defines --bg / --fg / --accent / --line /
+ * --dim / --warn / --code, those cascade in.
+ * ──────────────────────────────────────────────────────────────── */
+
+/* ── token fallbacks ───────────────────────────────────────────── */
+:root{
+  --lh-bg:     var(--bg,     #13151a);
+  --lh-fg:     var(--fg,     #d7dadf);
+  --lh-dim:    var(--dim,    #8a8f99);
+  --lh-line:   var(--line,   #262932);
+  --lh-accent: var(--accent, #7aa2ff);
+  --lh-ok:     var(--accent2,#9ed27a);
+  --lh-warn:   var(--warn,   #e8b86b);
+  --lh-code:   var(--code,   #1a1c22);
+  --lh-ff:     var(--ff-mono,"JetBrains Mono","SF Mono",Menlo,Consolas,monospace);
+}
+
+/* ── edit-mode visual affordances ─────────────────────────────── */
+body.lh-editing [contenteditable="true"]{
+  outline:1px dashed transparent;
+  transition:outline-color .15s, background-color .15s;
+  border-radius:2px;
+}
+body.lh-editing [contenteditable="true"]:hover{
+  outline-color:#3a3f4a;
+  background:rgba(122,162,255,0.04);
+}
+body.lh-editing [contenteditable="true"]:focus{
+  outline:1px solid var(--lh-accent);
+  background:rgba(122,162,255,0.08);
+  outline-offset:1px;
+}
+[contenteditable="true"]{ caret-color:var(--lh-accent); }
+
+/* ── toolbar (.ebar) ──────────────────────────────────────────── */
+.ebar{
+  position:fixed; top:10px; right:12px; z-index:2147483646;
+  display:flex; gap:6px; align-items:center;
+  background:var(--lh-bg); color:var(--lh-dim);
+  border:1px solid var(--lh-line); border-radius:5px;
+  padding:5px 7px; font:11px/1.4 var(--lh-ff);
+  box-shadow:0 4px 14px rgba(0,0,0,0.35);
+}
+.ebar button{
+  background:transparent; color:var(--lh-fg);
+  border:1px solid var(--lh-line); border-radius:3px;
+  padding:2px 9px; font:inherit; cursor:pointer;
+}
+.ebar button:hover{ border-color:var(--lh-accent); color:var(--lh-accent); }
+.ebar button.on{ background:var(--lh-accent); color:#0e0f12; border-color:var(--lh-accent); }
+.ebar button:disabled{ opacity:0.35; cursor:not-allowed; }
+.ebar .lbl{ color:var(--lh-dim); font-size:10.5px; margin-right:4px; }
+.ebar .sep{ width:1px; height:14px; background:var(--lh-line); margin:0 2px; }
+.ebar .dot{
+  width:7px; height:7px; border-radius:99px;
+  background:var(--lh-line); display:inline-block;
+}
+.ebar .dot.dirty{ background:var(--lh-warn); }
+.ebar .dot.saved{ background:var(--lh-ok); }
+.ebar .count{
+  font-size:10.5px; color:var(--lh-dim);
+  font-variant-numeric:tabular-nums; min-width:54px; text-align:right;
+}
+.ebar .count.dirty{ color:var(--lh-warn); }
+
+/* ── history panel (.hp) ──────────────────────────────────────── */
+.hp{
+  position:fixed; top:50px; right:12px; width:420px; max-height:72vh;
+  z-index:2147483645;
+  background:var(--lh-bg); color:var(--lh-fg);
+  border:1px solid var(--lh-line); border-radius:6px;
+  box-shadow:0 12px 28px rgba(0,0,0,0.5);
+  display:none; flex-direction:column; overflow:hidden;
+  font:11.5px/1.5 var(--lh-ff);
+}
+.hp.open{ display:flex; }
+.hp-head{
+  padding:8px 12px; border-bottom:1px solid var(--lh-line);
+  display:flex; justify-content:space-between; align-items:center;
+  color:var(--lh-dim);
+}
+.hp-head b{ color:var(--lh-fg); font-weight:500; }
+.hp-list{ overflow:auto; padding:4px 0; }
+.hp-row{
+  display:grid; grid-template-columns:62px 110px 1fr; gap:8px;
+  padding:6px 12px; font-size:11px;
+  border-left:2px solid transparent; cursor:pointer; align-items:baseline;
+}
+.hp-row:hover{ background:rgba(122,162,255,0.06); }
+.hp-row.applied{ border-left-color:var(--lh-ok); }
+.hp-row.unredone{ border-left-color:var(--lh-line); opacity:0.55; }
+.hp-row.theme{ font-style:italic; }
+.hp-row.theme .hp-where{ color:var(--lh-warn); }
+.hp-ts{ color:var(--lh-dim); font-variant-numeric:tabular-nums; }
+.hp-where{ color:var(--lh-accent); }
+.hp-diff{
+  color:var(--lh-fg);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.hp-empty{ padding:14px; font-size:11.5px; color:var(--lh-dim); text-align:center; }
+.hp-foot{
+  padding:6px 10px; border-top:1px solid var(--lh-line);
+  font-size:10.5px; color:var(--lh-dim);
+  display:flex; justify-content:space-between;
+}
+.hp-foot a{ color:var(--lh-accent); cursor:pointer; }
+
+/* ── design-system slide (optional) ───────────────────────────── */
+/* Only used if host page includes a .ds-slide section with
+   #ds-colors and #ds-type containers. */
+.ds-tokens{ display:flex; flex-direction:column; gap:5px; }
+.ds-row{
+  display:grid; grid-template-columns:90px 1fr 86px 64px; gap:10px;
+  align-items:center; padding:3px 0;
+  border-bottom:1px dotted var(--lh-line); font-size:12px;
+}
+.ds-row:last-child{ border-bottom:none; }
+.ds-name{ color:var(--lh-dim); font-variant-numeric:tabular-nums; }
+.ds-swatch{
+  width:100%; height:18px; border-radius:3px;
+  border:1px solid var(--lh-line); cursor:pointer;
+}
+.ds-hex{
+  background:var(--lh-code); border:1px solid var(--lh-line); color:var(--lh-fg);
+  padding:2px 6px; border-radius:3px;
+  font:11px/1.4 var(--lh-ff); width:100%;
+}
+.ds-hex:focus{ outline:1px solid var(--lh-accent); border-color:var(--lh-accent); }
+.ds-reset{
+  background:transparent; border:1px solid var(--lh-line); color:var(--lh-dim);
+  border-radius:3px; font:10px/1.4 var(--lh-ff); cursor:pointer; padding:2px 4px;
+}
+.ds-reset:hover{ color:var(--lh-warn); border-color:var(--lh-warn); }
+.ds-type-row{
+  display:grid; grid-template-columns:60px 1fr 64px 64px; gap:10px;
+  align-items:center; padding:4px 0;
+  border-bottom:1px dotted var(--lh-line);
+}
+.ds-type-row:last-child{ border-bottom:none; }
+.ds-type-sample{
+  color:var(--lh-fg); overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap;
+}
+.ds-num{
+  background:var(--lh-code); border:1px solid var(--lh-line); color:var(--lh-fg);
+  padding:2px 6px; border-radius:3px;
+  font:11px/1.4 var(--lh-ff); width:100%;
+  text-align:right; font-variant-numeric:tabular-nums;
+}
+.ds-num:focus{ outline:1px solid var(--lh-accent); border-color:var(--lh-accent); }
+.ds-raw{
+  background:var(--lh-code); border:1px solid var(--lh-line); border-radius:4px;
+  padding:8px 12px; font:11px/1.5 var(--lh-ff); color:var(--lh-ok);
+  overflow:auto; max-height:140px; white-space:pre;
+}
+.ds-raw .empty{ color:var(--lh-dim); font-style:italic; }
+
+/* ── print: hide editor chrome ────────────────────────────────── */
+@media print{ .ebar, .hp{ display:none !important; } }

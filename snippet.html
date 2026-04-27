@@ -1,0 +1,45 @@
+<!-- live-html: paste this before </body>; load editor.css in <head> and editor.js at end of <body> -->
+
+<!-- Optional config block. Remove or edit as needed. Defaults are sane. -->
+<!--
+<script type="application/json" id="live-html-config">
+{
+  "storageKey": "live-html::oplog::v1",
+  "fileHandleDb": "live-html-fh",
+  "rootSelector": "body",
+  "editableSelectors": [
+    "h1","h2","h3","h4","h5","h6",
+    "p","li","td","th","code","blockquote","figcaption",
+    "dt","dd","summary","caption"
+  ]
+}
+</script>
+-->
+
+<div class="ebar" id="ebar">
+  <span class="lbl">edit</span>
+  <button id="eb-toggle" title="toggle edit mode">off</button>
+  <span class="sep"></span>
+  <button id="eb-undo" title="undo (⌘Z)">↶</button>
+  <button id="eb-redo" title="redo (⌘⇧Z)">↷</button>
+  <button id="eb-history" title="show edit log">log</button>
+  <span class="sep"></span>
+  <button id="eb-save" title="commit edits back to disk (clears the log)">save</button>
+  <button id="eb-download" title="download current state as HTML">download</button>
+  <button id="eb-revert" title="discard all unsaved ops and reload from disk">revert</button>
+  <span class="sep"></span>
+  <span class="count" id="eb-count">clean</span>
+  <span class="dot" id="eb-status" title="clean"></span>
+</div>
+
+<div class="hp" id="eb-hist-panel">
+  <div class="hp-head">
+    <span><b>edit log</b> · click an entry to jump to it</span>
+    <span><a id="eb-hp-close" title="close">×</a></span>
+  </div>
+  <div class="hp-list"></div>
+  <div class="hp-foot">
+    <span><span style="color:var(--lh-ok,#9ed27a)">●</span> applied &nbsp; <span style="color:var(--lh-dim,#8a8f99)">●</span> undone</span>
+    <span>save = clear log + write disk</span>
+  </div>
+</div>
